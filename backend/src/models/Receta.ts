@@ -1,24 +1,26 @@
+import { time, timeStamp } from 'console';
 import mongoose from 'mongoose';
 
-const ingredienteSchema = new mongoose.Schema({
-  nombre: String,
-  cantidad: String
-});
-
-const pasoSchema = new mongoose.Schema({
-  orden: Number,
-  descripcion: String,
-  media: [String]
-});
-
-const recetaSchema = new mongoose.Schema({
+export const recetaSchema = new mongoose.Schema({
   nombre: { type: String, required: true },
   porciones: Number,
   descripcion: String,
-  ingredientes: [ingredienteSchema],
-  pasos: [pasoSchema],
-  modo: { type: String, enum: ['nuevo', 'reemplazo', 'edicion'] },
-  requiereWifiGratis: Boolean
-});
+  ingredientes: [{
+    nombre: { type: String, required: true },
+    cantidad: { type: String, required: true }
+  }],
+  pasos: [{
+    descripcion: { type: String, required: true },
+    orden: { type: Number, required: true },
+    media: [String]
+  }],
+  categorias: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Categoria' }],
+  media: [String],
+  usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  fechaCreacion: { type: Date, default: Date.now }
+},
+  {
+    timestamps: true,
+  });
 
-export default mongoose.model('Receta', recetaSchema);
+export const Receta = mongoose.model('Receta', recetaSchema);
