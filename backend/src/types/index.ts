@@ -36,7 +36,8 @@ export interface AuthUser {
 
 export interface Ingrediente {
   nombre: string;
-  cantidad: string;
+  cantidad: number;
+  unidad: string;
 }
 
 export interface Paso {
@@ -52,7 +53,7 @@ export interface Receta {
   descripcion: string;
   ingredientes: Ingrediente[];
   pasos: Paso[];
-  categorias: Categoria[];
+  categorias?: Categoria[];
   media: string[];
   usuario: string;
   fechaCreacion: Date;

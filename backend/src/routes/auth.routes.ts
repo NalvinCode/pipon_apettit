@@ -1,10 +1,17 @@
-import express, { Request, Response, NextFunction, RequestHandler } from 'express';
-import { authenticateToken, generarJWT } from '../utils/jwt';
-import User from '../models/User';
-import {registrarUsuario, loginUsuario, recuperarClave, verificarCodigo, actualizarClave} from '../controllers/auth.controller';
+import express from 'express';
+import { Router } from 'express';
+import { Request, Response } from 'express';
+import {authenticateToken} from '../utils/jwt';
+import { 
+    loginUsuario, 
+    registrarUsuario, 
+    recuperarClave, 
+    verificarCodigo, 
+    actualizarClave
+} from '../controllers/auth.controller';
 
 
-const router = express.Router();
+const router = Router();
 
 router.post('/login', loginUsuario);
 router.post('/registro', registrarUsuario);

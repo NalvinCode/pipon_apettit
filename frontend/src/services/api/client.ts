@@ -23,11 +23,16 @@ class ApiClient {
       async (config) => {
         try {
           const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+          const tokenTemp = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN_TEMP);
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
           }
+          if (tokenTemp) {
+            config.headers.Authorization = `Bearer ${tokenTemp}`;
+          }
+
         } catch (error) {
-          console.warn('Error getting auth token:', error);
+          console.warn('Error obteniendo codigo de autenticacion:', error);
         }
         return config;
       },
@@ -94,21 +99,26 @@ class ApiClient {
 
   // Métodos HTTP públicos
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    this.setupInterceptors();
+    console.log(url)
     const response = await this.instance.get<ApiResponse<T>>(url, config);
     return response.data;
   }
 
   async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    this.setupInterceptors();
     const response = await this.instance.post<ApiResponse<T>>(url, data, config);
     return response.data;
   }
 
   async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    this.setupInterceptors();
     const response = await this.instance.put<ApiResponse<T>>(url, data, config);
     return response.data;
   }
 
   async delete<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    this.setupInterceptors();
     const response = await this.instance.delete<ApiResponse<T>>(url, config);
     return response.data;
   }

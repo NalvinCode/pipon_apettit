@@ -4,7 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '@/types';
-import { authService } from '@/services/auth';
+import { useAuth } from '@/contexts/AuthContext'; // ← Importar useAuth
 
 type RecuperarClaveScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'RecuperarClave'>;
 
@@ -15,6 +15,8 @@ interface Props {
 const RecuperarClaveScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const { recuperarClave } = useAuth();
 
   const handleSendCode = async () => {
     if (!email.trim()) {
@@ -30,15 +32,21 @@ const RecuperarClaveScreen: React.FC<Props> = ({ navigation }) => {
 
     try {
       setIsLoading(true);
-      const response = await authService.recuperarClave({ email: email.trim() });
-      
-      if (response.success) {
-        Alert.alert('Código enviado', response.message, [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('VerificarCodigo', { email: email.trim() })
-          }
-        ]);
+      const success = await recuperarClave({ email: email.trim() });
+
+      if (success) {
+        Alert.alert(
+          'Éxito',
+          'El código de recuperación ha sido enviado a tu email',
+          [
+            {
+              text: 'Ok',
+              onPress: () => navigation.navigate('VerificarCodigo', 
+                { email: email.trim() }
+              ),
+            }
+          ]
+        );
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Error al enviar el código');

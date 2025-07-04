@@ -1,0 +1,23 @@
+//Recipe navigator
+
+{
+    "route": {
+        "key": "Recipe-oYvZFaoIGfKxS3cq4ggBj",
+        "name": "Recipe",
+        "params": {
+            "recipe": [Object
+            ],
+            "recipeId": "68655932a179411a03a8f010"
+        },
+        "path": undefined
+    }
+}
+
+//RecipeDetail
+{
+    "route": {
+        "key": "RecipeDetail-h0Ib4CYOsgNRbpDWyBZ8Q",
+        "name": "RecipeDetail",
+        "params": undefined
+    }
+}

@@ -111,8 +111,10 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Constantes para AsyncStorage (equivalente a localStorage en React Native)
-const TOKEN_KEY = '@auth_token';
-const USER_KEY = '@auth_user';
+const TOKEN_KEY = 'auth_token';
+const USER_KEY = 'auth_user';
+
+const TOKEN_KEY_TEMP = 'auth_token_temp';
 
 // Proveedor del contexto
 interface AuthProviderProps {
@@ -133,11 +135,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Función para guardar datos en AsyncStorage
+  const saveAuthDataTemp = async (user: User, token: string): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(TOKEN_KEY_TEMP, token);
+      await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+      console.log('✅ Datos de auth guardados en AsyncStorage');
+    } catch (error) {
+      console.error('❌ Error guardando datos de auth:', error);
+    }
+  };
+
   // Función para limpiar datos de AsyncStorage
   const clearAuthData = async (): Promise<void> => {
     try {
       await AsyncStorage.removeItem(TOKEN_KEY);
       await AsyncStorage.removeItem(USER_KEY);
+      await AsyncStorage.removeItem(TOKEN_KEY_TEMP);
       console.log('🗑️ Datos de auth eliminados de AsyncStorage');
     } catch (error) {
       console.error('❌ Error limpiando datos de auth:', error);
@@ -275,6 +289,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (response.success) {
         console.log('✅ Código verificado correctamente');
+        // Guardar usuario y token en AsyncStorage
+        saveAuthDataTemp(response.data.usuario, response.data.token);
         dispatch({ type: 'SET_LOADING', payload: false });
         return true;
       } else {
@@ -306,6 +322,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (response.success) {
         console.log('✅ Clave actualizada correctamente');
+        clearAuthData(); // Limpiar datos de auth
         dispatch({ type: 'SET_LOADING', payload: false });
         return true;
       } else {

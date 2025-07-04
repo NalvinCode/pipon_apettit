@@ -4,7 +4,6 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
-import Logout from './Logout';
 
 const Navbar: React.FC = () => {
   const { user } = useAuth();
@@ -49,8 +48,6 @@ const Navbar: React.FC = () => {
             <Text className="text-brown-500 text-xs font-semibold mt-1">Perfil</Text>
           </TouchableOpacity>
 
-          {/* Logout (pequeño) */}
-          <Logout />
         </View>
       </View>
     </SafeAreaView>

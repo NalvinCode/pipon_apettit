@@ -18,7 +18,7 @@ export const authService = {
     return apiClient.post('/auth/recuperar-clave', data);
   },
 
-  async verificarCodigo(data: VerificarCodigoData): Promise<ApiResponse<{ emailVerificado: string }>> {
+  async verificarCodigo(data: VerificarCodigoData): Promise<ApiResponse<AuthResponse>> {
     return apiClient.post('/auth/verificar-codigo', data);
   },
 

@@ -197,3 +197,9 @@ export const generarJWT = (uid: string): string => {
   const payload = { uid };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
 };
+
+// Exportar también el método generarJWT original
+export const generarJWTemp = (uid: string): string => {
+  const payload = { uid };
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '10m' });
+};

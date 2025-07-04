@@ -7,7 +7,8 @@ export const recetaSchema = new mongoose.Schema({
   descripcion: String,
   ingredientes: [{
     nombre: { type: String, required: true },
-    cantidad: { type: String, required: true }
+    cantidad: { type: Number, required: true },
+    unidad: { type: String, required: true, enum: ['gr', 'kg', 'ud', 'cda', 'cdta'],  }
   }],
   pasos: [{
     descripcion: { type: String, required: true },
@@ -17,7 +18,9 @@ export const recetaSchema = new mongoose.Schema({
   categorias: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Categoria' }],
   media: [String],
   usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  fechaCreacion: { type: Date, default: Date.now }
+  fechaCreacion: { type: Date, default: Date.now },
+  tiempo: { type: Number, default: 0 },
+  valoracionPromedio: { type: Number, default: 0 }
 },
   {
     timestamps: true,

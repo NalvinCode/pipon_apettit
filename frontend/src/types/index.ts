@@ -36,7 +36,8 @@ export interface AuthUser {
 
 export interface Ingrediente {
   nombre: string;
-  cantidad: string;
+  cantidad: Number;
+  unidad: string;
 }
 
 export interface Paso {
@@ -133,4 +134,11 @@ export type BrowseStackParamList = {
     tiempoPreparacion?: number;
     valoracion?: number;
   } };
+};
+
+export type RecipeStackParamList = {
+  RecipeDetail: { recipeId: string; recipe?: any };
+  RecipeEdit: { recipeId: string };
+  RecipeComments: { recipeId: string };
+  RecipeRating: { recipeId: string };
 };

@@ -1,30 +1,43 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Receta } from '@/types';
 import RecetaItem from '@/components/browse/RecetaItem';
 
-
 interface SearchResultProps {
     recetas: Receta[];
+    showEmptyState?: boolean;
 }
 
-const SearchResult: React.FC<SearchResultProps> = ({ recetas }) => {
-    return (
-        <SafeAreaView className="flex-1 bg-primary-100">
-            <View className="flex-1 justify-center px-8">
-                {recetas.length === 0 ? (
-                    <Text className="text-brown-300 text-lg text-center">No se encontraron recetas.</Text>
-                ) : (
-                    recetas.map((receta) => (
-                        <RecetaItem
-                            key={receta.id}
-                            receta={receta}>
-                        </RecetaItem>
-                    ))
-                )}
+const SearchResult: React.FC<SearchResultProps> = ({
+    recetas,
+    showEmptyState = true
+}) => {
+    const renderRecipeItem = ({ item }: { item: Receta }) => (
+        <RecetaItem
+            receta={item}
+        />
+    );
+
+    if (recetas.length === 0 && showEmptyState) {
+        return (
+            <View className="bg-white rounded-xl p-8 items-center">
+                <Ionicons name="search-outline" size={48} color="#B8A898" />
+                <Text className="text-brown-400 text-center mt-4">
+                    No se encontraron recetas
+                </Text>
             </View>
-        </SafeAreaView>
+        );
+    }
+
+    return (
+        <FlatList
+            data={recetas}
+            renderItem={renderRecipeItem}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={false} // Desabilitar scroll interno si está dentro de ScrollView
+        />
     );
 };
 

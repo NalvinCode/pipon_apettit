@@ -36,9 +36,6 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
       if (success) {
         console.log('✅ Login exitoso - navegación automática activada');
-        // ✅ NO necesitas navegar manualmente
-        // El RootNavigator detecta automáticamente isAuthenticated = true
-        // y cambia a BrowseNavigator
         
         Alert.alert('Éxito', 'Bienvenido de nuevo!', [
           {

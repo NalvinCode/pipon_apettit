@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { AuthStackParamList } from '@/types';
-import { authService } from '@/services/auth';
+import { useAuth } from '@/contexts/AuthContext'; // ← Importar useAuth
 
 type NuevaClaveScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'NuevaClave'>;
 type NuevaClaveScreenRouteProp = RouteProp<AuthStackParamList, 'NuevaClave'>;
@@ -25,6 +25,8 @@ const NuevaClaveScreen: React.FC<Props> = ({ navigation, route }) => {
     return password.length >= 6; // Validación básica
   };
 
+  const {actualizarClave} = useAuth();
+
   const handleUpdatePassword = async () => {
     if (!nuevaClave.trim() || !confirmarClave.trim()) {
       Alert.alert('Error', 'Por favor completa todos los campos');
@@ -43,13 +45,13 @@ const NuevaClaveScreen: React.FC<Props> = ({ navigation, route }) => {
 
     try {
       setIsLoading(true);
-      const response = await authService.actualizarClave({
+      const success = await actualizarClave({
         email,
         codigo,
         nuevaClave
       });
       
-      if (response.success) {
+      if (success) {
         Alert.alert(
           'Éxito',
           'Tu contraseña ha sido actualizada exitosamente',

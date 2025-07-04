@@ -49,6 +49,7 @@ export const API_CONFIG = {
 // Configuración de storage
 export const STORAGE_KEYS = {
   AUTH_TOKEN: 'auth_token',
+  AUTH_TOKEN_TEMP: 'auth_token_temp',
   USER_DATA: 'user_data',
   REFRESH_TOKEN: 'refresh_token',
   APP_SETTINGS: 'app_settings',

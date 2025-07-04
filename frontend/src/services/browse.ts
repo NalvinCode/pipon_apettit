@@ -12,6 +12,7 @@ import {
 
 export const browseService = {
   async ultimas(): Promise<ApiResponse<Receta[]>> {
-    return apiClient.post('/recetas/ultimas');
+    console.log('🔍 Fetching latest recipes...');
+    return apiClient.get('/recetas/ultimas');
   },
 };

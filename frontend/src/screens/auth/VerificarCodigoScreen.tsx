@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { AuthStackParamList } from '@/types';
-import { authService } from '@/services/auth';
+import { useAuth } from '@/contexts/AuthContext'; // ← Importar useAuth
 
 type VerificarCodigoScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'VerificarCodigo'>;
 type VerificarCodigoScreenRouteProp = RouteProp<AuthStackParamList, 'VerificarCodigo'>;
@@ -20,6 +20,8 @@ const VerificarCodigoScreen: React.FC<Props> = ({ navigation, route }) => {
   const [codigo, setCodigo] = useState(['', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
+
+  const {verificarCodigo, recuperarClave} = useAuth();
 
   const handleCodeChange = (text: string, index: number) => {
     if (text.length > 1) return; // Solo un dígito
@@ -50,13 +52,17 @@ const VerificarCodigoScreen: React.FC<Props> = ({ navigation, route }) => {
 
     try {
       setIsLoading(true);
-      const response = await authService.verificarCodigo({ 
+      const success = await verificarCodigo({ 
         email, 
         codigo: codigoCompleto 
       });
       
-      if (response.success) {
+      if (success) {
         navigation.navigate('NuevaClave', { email, codigo: codigoCompleto });
+      }else {
+        Alert.alert('Codigo incorrecto');
+        setCodigo(['', '', '', '']);
+        inputRefs.current[0]?.focus();
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Código incorrecto');
@@ -69,8 +75,8 @@ const VerificarCodigoScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const handleResendCode = async () => {
     try {
-      const response = await authService.recuperarClave({ email });
-      if (response.success) {
+      const success = await recuperarClave({ email });
+      if (success) {
         Alert.alert('Código reenviado', 'Se ha enviado un nuevo código a tu email');
         setCodigo(['', '', '', '']);
         inputRefs.current[0]?.focus();
