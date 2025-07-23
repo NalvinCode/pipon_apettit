@@ -17,7 +17,6 @@ const Logout: React.FC = () => {
                 text: 'Cerrar sesión',
                 onPress: () => {
                     logout()
-                    console.log('Sesión cerrada');
                 },
             },
         ]);

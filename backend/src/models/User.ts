@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   codigoRecuperacion: { type: String, default: null },
   codigoExpiracion: { type: Date, default: null },
+  favoritos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Receta'}]
 });
 
 export default mongoose.model('User', userSchema);

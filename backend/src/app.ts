@@ -13,8 +13,6 @@ app.use(express.json());
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || '';
 
-console.log(MONGO_URI)
-
 app.use('/api', router);
 
 mongoose.connect(MONGO_URI)

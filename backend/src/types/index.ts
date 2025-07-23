@@ -15,6 +15,11 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+export interface PaginatedRequest {
+  page?: number;
+  limit?: number;
+}
+
 export interface ErrorResponse {
   error: string;
   message: string;
@@ -59,6 +64,7 @@ export interface Receta {
   fechaCreacion: Date;
   tiempo: number;
   valoracionPromedio?: number;
+  favorito?: boolean;
 }
 
 export interface Categoria {
@@ -68,10 +74,10 @@ export interface Categoria {
 
 export interface Valoracion {
   id: string;
-  receta: Receta;
-  usuario: AuthUser;
+  receta: string;
+  usuario: string;
   valoracion: number;
-  comentario?: string;
+  comentario: string;
   fechaCreacion: Date;
 }
 
@@ -104,6 +110,16 @@ export interface ActualizarClaveData {
   email: string;
   codigo: string;
   nuevaClave: string;
+}
+
+export interface RecetaSearchFilters extends PaginatedRequest{
+  texto?: string;
+  autor?: string;
+  categorias?: string[];
+  ingrediente?: string;
+  incluirIngrediente?: boolean;
+  tiempoPreparacion?: number;
+  valoracion?: number;
 }
 
 // Tipos de navegación

@@ -1,33 +1,47 @@
 // src/navigation/AuthNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthStackParamList, Receta, RecipeStackParamList } from '@/types';
+import { AuthStackParamList, Receta} from '@/types';
 
 import RecipeDetailScreen from '../screens/recipe/RecipeDetailScreen';
+import CreateRecipe from '../screens/recipe/CreateRecipe';
+import CreateReview from '../screens/recipe/CreateReview';
 import { RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { StackNavigationProp} from '@react-navigation/stack';
+import {RecipeStackParamList} from '../types/index'
+
 
 const Stack = createNativeStackNavigator<RecipeStackParamList>();
 
-type RecipeNavigationProp = StackNavigationProp<RecipeStackParamList>;
-type RecipeRouteProp = RouteProp<RecipeStackParamList, keyof RecipeStackParamList>;
-
 interface Props {
-  navigation: RecipeNavigationProp;
-  route: RecipeRouteProp;
+  route: RouteProp<undefined>;
 }
 
-const RecipeNavigator: React.FC<Props> = ({ navigation, route }) => {
+const RecipeNavigator: React.FC<Props> = ({ route }) => {
+
+  const params = route.params as { recipeId?: string; recipe?: Receta; action: string} | undefined;
+
+  const recipeId = params?.recipeId;
+  const recipe = params?.recipe;
+  const action = params?.action;
+  
   return (
     <Stack.Navigator
       id={undefined}
-      initialRouteName="RecipeDetail"
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} initialParams={route.params} />
+      {
+        action === 'RecipeDetail' && <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} initialParams={{recipeId, recipe}} />
+      }
+      {
+        action === 'CreateRecipe' && <Stack.Screen name="CreateRecipe" component={CreateRecipe}/>
+      }
+      {
+        action === 'CreateReview' && <Stack.Screen name="CreateReview" component={CreateReview} initialParams={{recipeId, recipeName: recipe.nombre}}/>
+      }
     </Stack.Navigator>
   );
 };

@@ -100,7 +100,6 @@ class ApiClient {
   // Métodos HTTP públicos
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     this.setupInterceptors();
-    console.log(url)
     const response = await this.instance.get<ApiResponse<T>>(url, config);
     return response.data;
   }

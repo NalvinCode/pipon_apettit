@@ -7,13 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import AuthNavigator from './AuthNavigator';
 import BrowseNavigator from './BrowseNavigator';
 import RecipeNavigator from './RecipeNavigator';
-// import LoadingScreen from '@/components/LoadingScreen';
 
-export type RootStackParamList = {
-  Auth: undefined;
-  Browse: undefined;
-  Recipe: { recipeId: string; recipe?: any }; // ← Nuevo stack para recetas
-};
+import {RootStackParamList} from '../types/index'
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,15 +25,15 @@ export default function RootNavigator() {
       {isAuthenticated ? (
         // Usuario autenticado - Stacks disponibles
         <>
-          <Stack.Screen 
-            name="Browse" 
+          <Stack.Screen
+            name="Browse"
             component={BrowseNavigator}
             options={{ gestureEnabled: false }}
           />
-          <Stack.Screen 
-            name="Recipe" 
+          <Stack.Screen
+            name="Recipe"
             component={RecipeNavigator}
-            options={{ 
+            options={{
               gestureEnabled: true, // Permitir swipe back desde recetas
               presentation: 'modal', // Presentación como modal (opcional)
             }}
@@ -46,8 +41,8 @@ export default function RootNavigator() {
         </>
       ) : (
         // Usuario no autenticado - Solo auth
-        <Stack.Screen 
-          name="Auth" 
+        <Stack.Screen
+          name="Auth"
           component={AuthNavigator}
           options={{ gestureEnabled: false }}
         />

@@ -5,12 +5,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import Logout from './Logout';
+import { useNavigation } from '@react-navigation/native';
 
 const Navbar: React.FC = () => {
   const { user } = useAuth();
 
+  const navigation = useNavigation();
+
+  const onCreatePress = () => {
+    navigation.navigate({
+      name: 'Recipe',
+      params: { action: 'CreateRecipe' },
+    } as never);
+  }
+
   return (
-    <SafeAreaView className="bg-primary-100">
+    <SafeAreaView className="bg-primary-300">
       <View className="bg-white border-t border-primary-200 shadow-lg">
         <View className="flex-row items-center justify-between px-10 py-3">
 
@@ -32,10 +42,11 @@ const Navbar: React.FC = () => {
             <Text className="text-brown-500 text-xs font-semibold mt-1">Buscar</Text>
           </TouchableOpacity>
 
-          {/* Favorites */}
+          {/* Create */}
           <TouchableOpacity
             className="items-center justify-center p-2 rounded-xl"
             activeOpacity={0.7}
+            onPress={() => onCreatePress()}
           >
             <Ionicons name="add-circle-outline" size={40} color="#8B7355" />
           </TouchableOpacity>

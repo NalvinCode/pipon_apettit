@@ -7,14 +7,25 @@ import {
   VerificarCodigoData, 
   ActualizarClaveData,
   ApiResponse, 
-  Receta
+  Receta,
+  Categoria,
+  Valoracion
 } from '@/types';
 
 export const recipeService = {
   async getById(recipeId): Promise<ApiResponse<Receta>> {
-    return apiClient.get(`/?id=${recipeId}`);
+    return apiClient.get(`/recetas/obtener/?id=${recipeId}`);
   },
-  async valorar(recipeId): Promise<ApiResponse<Receta>> {
-    return apiClient.get(`/?id=${recipeId}/valorar`);
+  async getCategorias(): Promise<ApiResponse<Categoria[]>> {
+    return apiClient.get(`/recetas/categorias`);
+  },
+  async getValoraciones(recipeId): Promise<ApiResponse<Valoracion[]>> {
+    return apiClient.get(`/recetas/valoraciones/?id=${recipeId}`);
+  },
+  async createRecipe(recipe): Promise<ApiResponse<{recipeId: string}>> {
+    return apiClient.post(`/recetas/crear`, recipe);
+  },
+  async valorar(recipeId, valoracion): Promise<ApiResponse<Valoracion>> {
+    return apiClient.post(`/recetas/valorar/?id=${recipeId}`, valoracion);
   },
 };

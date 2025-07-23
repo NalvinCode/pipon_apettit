@@ -1,57 +1,57 @@
-// src/components/global/SimpleNavbar.tsx
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/contexts/AuthContext';
 
-const Navbar: React.FC = () => {
-  const { user } = useAuth();
+interface SearchBarProps {
+  initialText: string;
+  onSearch: (inputValue: string) => void;
+  onClear: () => void;
+}
 
+const SearchBar: React.FC<SearchBarProps> = ({ 
+  initialText,
+  onSearch, 
+  onClear
+}) => {
+  const [inputValue, setInputValue] = useState(initialText);
   return (
-    <SafeAreaView className="bg-primary-100">
-      <View className="bg-white border-t border-primary-200 shadow-lg">
-        <View className="flex-row items-center justify-between px-10 py-3">
-
-          {/* Home */}
-          <TouchableOpacity
-            className="items-center justify-center p-2 rounded-xl"
-            activeOpacity={0.7}
-          >
-            <Ionicons name="home-outline" size={20} color="#8B7355" />
-            <Text className="text-brown-500 text-xs font-semibold mt-1">Inicio</Text>
+    <View className="px-4 mb-4">
+      <View className="bg-white rounded-xl p-3 shadow-sm flex-row items-center">
+        <Ionicons name="search-outline" size={20} color="#B8A898" />
+        <TextInput
+          value={inputValue}
+          onChangeText={setInputValue}
+          placeholder="Buscar recetas, ingredientes..."
+          placeholderTextColor="#B8A898"
+          className="flex-1 ml-3 text-brown-500 text-base"
+          onSubmitEditing={() => onSearch(inputValue)}
+          returnKeyType="search"
+          autoCorrect={false}
+          autoCapitalize="none"
+          autoComplete="off"
+        />
+        {inputValue.length > 0 && (
+          <TouchableOpacity onPress={onClear} className="ml-2">
+            <Ionicons name="close-circle" size={20} color="#B8A898" />
           </TouchableOpacity>
-
-          {/* Search */}
-          <TouchableOpacity
-            className="items-center justify-center p-2 rounded-xl"
-            activeOpacity={0.7}
-          >
-            <Ionicons name="search-outline" size={20} color="#8B7355" />
-            <Text className="text-brown-500 text-xs font-semibold mt-1">Buscar</Text>
-          </TouchableOpacity>
-
-          {/* Favorites */}
-          <TouchableOpacity
-            className="items-center justify-center p-2 rounded-xl"
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add-circle-outline" size={40} color="#8B7355" />
-          </TouchableOpacity>
-
-          {/* Profile*/}
-          <TouchableOpacity
-            className="items-center justify-center p-2 rounded-xl"
-            activeOpacity={0.7}
-          >
-            <Ionicons name="person-outline" size={20} color="#8B7355" />
-            <Text className="text-brown-500 text-xs font-semibold mt-1">Perfil</Text>
-          </TouchableOpacity>
-
-        </View>
+        )}
+        <TouchableOpacity
+          onPress={() => onSearch(inputValue)}
+          className="ml-2 bg-primary-400 p-2 rounded-lg"
+          disabled={!inputValue.trim()}
+        >
+          <Ionicons
+            name="arrow-forward"
+            size={16}
+            color={inputValue.trim() ? "white" : "#B8A898"}
+          />
+        </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
-export default Navbar;
+// Asignar displayName para debugging
+SearchBar.displayName = 'SearchBar';
+
+export default SearchBar;

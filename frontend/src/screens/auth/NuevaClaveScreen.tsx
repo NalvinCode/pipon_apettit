@@ -71,7 +71,7 @@ const NuevaClaveScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary-100">
+    <SafeAreaView className="flex-1 bg-primary-300">
       <View className="flex-1 justify-center px-8">
         {/* Título */}
         <View className="items-center mb-12">

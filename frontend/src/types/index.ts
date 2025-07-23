@@ -15,6 +15,11 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+export interface PaginatedRequest {
+  page?: number;
+  limit?: number;
+}
+
 export interface ErrorResponse {
   error: string;
   message: string;
@@ -59,6 +64,7 @@ export interface Receta {
   fechaCreacion: Date;
   tiempo: number;
   valoracionPromedio?: number;
+  favorito?: boolean;
 }
 
 export interface Categoria {
@@ -68,11 +74,11 @@ export interface Categoria {
 
 export interface Valoracion {
   id: string;
-  receta: Receta;
-  usuario: AuthUser;
-  valoracion: number;
-  comentario?: string;
-  fechaCreacion: Date;
+  receta: string;
+  usuario: string;
+  puntuacion: number;
+  comentario: string;
+  fechaCreacion?: Date;
 }
 
 export interface AuthUser {
@@ -84,18 +90,6 @@ export interface AuthUser {
 export interface AuthResponse{
   usuario: AuthUser;
   token: string;
-}
-
-export interface RecetaResponse {
-  id: string,
-  nombre: string,
-  porciones: number, // Default to 1 if undefined or null
-  descripcion: string,
-  ingredientes: Ingrediente[],
-  pasos: Paso[],
-  media: string[],
-  usuario: string,
-  fechaCreacion: Date
 }
 
 export interface RecuperarClaveData {
@@ -113,7 +107,23 @@ export interface ActualizarClaveData {
   nuevaClave: string;
 }
 
+export interface RecetaSearchFilters extends PaginatedRequest{
+  texto?: string;
+  autor?: string;
+  categorias?: string[];
+  ingredientes?: string[];
+  incluirIngredientes?: boolean;
+  tiempoPreparacion?: number;
+  valoracion?: number;
+}
+
 // Tipos de navegación
+export type RootStackParamList = {
+  Auth: undefined;
+  Browse: undefined;
+  Recipe: { recipeId: string; recipe?: any };
+};
+
 export type AuthStackParamList = {
   Login: undefined;
   NuevaClave: { email: string; codigo: string };
@@ -126,19 +136,11 @@ export type BrowseStackParamList = {
   Index: undefined;
   Categorias: undefined;
   BusquedaAvanzada: undefined;
-  ResultadoBusqueda: { query: {
-    autor? : string;
-    categoria? : string;
-    ingredientes?: string[];
-    incluirIngredientes?: boolean;
-    tiempoPreparacion?: number;
-    valoracion?: number;
-  } };
+  ResultadoBusqueda: { query: RecetaSearchFilters};
 };
 
 export type RecipeStackParamList = {
-  RecipeDetail: { recipeId: string; recipe?: any };
-  RecipeEdit: { recipeId: string };
-  RecipeComments: { recipeId: string };
-  RecipeRating: { recipeId: string };
+  RecipeDetail: {recipeId: string; recipe: Receta };
+  CreateRecipe: undefined;
+  CreateReview: {recipeId?: string, recipeName: string}
 };

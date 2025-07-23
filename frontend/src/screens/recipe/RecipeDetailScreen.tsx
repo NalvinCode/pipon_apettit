@@ -10,14 +10,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRoute, useNavigation } from '@react-navigation/native';
-
-import { RootStackParamList } from '@/navigation/RootNavigator';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Receta, RecipeStackParamList } from '@/types';
+import { Receta, RecipeStackParamList, Valoracion } from '@/types';
 import { recipeService } from '@/services/recipe';
 import { useAuth } from '@/contexts/AuthContext';
+import { userService } from '@/services/user';
 
 type RecipeDetailScreenNavigationProp = StackNavigationProp<RecipeStackParamList, 'RecipeDetail'>;
 type RecipeDetailcreenRouteProp = RouteProp<RecipeStackParamList, 'RecipeDetail'>;
@@ -40,50 +38,19 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [activeTab, setActiveTab] = useState<TabType>('Ingredientes');
   const [isStartCooking, setIsStartCooking] = useState<boolean>(false);
   const [currentPortions, setCurrentPortions] = useState<number>(recipe?.porciones || 1);
-
-  // Mock data para reseñas
-  const mockReviews = [
-    {
-      id: '1',
-      user: 'Agustina Ezequiel',
-      rating: 5,
-      comment: 'Muy buena receta, fácil de seguir',
-      avatar: '👨‍🍳'
-    },
-    {
-      id: '2',
-      user: 'Trijalero Tralala',
-      rating: 4,
-      comment: 'Le faltó pimienta',
-      avatar: '👩‍🍳'
-    },
-    {
-      id: '3',
-      user: 'Champanzini Bananini',
-      rating: 4,
-      comment: 'Le faltó pimienta',
-      avatar: '👨‍🍳'
-    },
-    {
-      id: '4',
-      user: 'Brr Brr Patatím',
-      rating: 3,
-      comment: '',
-      avatar: '👩‍🍳'
-    }
-  ];
+  const [reseñas, setReseñas] = useState<Valoracion[]>([])
 
   // Cargar detalles de la receta si no se pasó inicialmente
   useEffect(() => {
-    if (!initialRecipe) {
-      fetchRecipeDetails();
-    }
+    fetchRecipeDetails()
   }, [recipeId]);
 
   // Actualizar porciones cuando cambie la receta
+  // Verificar si la receta está en favoritos
   useEffect(() => {
     if (recipe) {
       setCurrentPortions(recipe.porciones);
+      setIsFavorite(recipe.favorito);
     }
   }, [recipe]);
 
@@ -91,7 +58,7 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     try {
       setIsLoading(true);
       const response = await recipeService.getById(recipeId);
-
+      console.log(response)
       if (response.success && response.data) {
         setRecipe(response.data);
       } else {
@@ -107,16 +74,48 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
-  const handleBackPress = () => {
-    navigation.goBack();
-  };
+  const fetchValoraciones = async () => {
+    try {
+      setIsLoading(true);
+      const response = await recipeService.getValoraciones(recipeId);
+
+      if (response.success && response.data) {
+        setReseñas(response.data);
+      } else {
+        Alert.alert('Error', 'No se pudieron cargar las reseñas');
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      Alert.alert('Error', 'Error de conexión');
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   const toggleFavorite = async () => {
     try {
-      setIsFavorite(!isFavorite);
+      const response = await userService.toggleFavorite(recipeId);
+
+      const response2 = await userService.listarFavoritos();
+
+      if (response.success) {
+        setIsFavorite(!isFavorite);
+      } else {
+        Alert.alert('Error', 'Error al agregar o sacar de favoritos');
+      }
     } catch (error) {
       console.error('Error toggling favorite:', error);
     }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'Reseñas') {
+      fetchValoraciones();
+    }
+  }, [activeTab]);
+
+  const handleBackPress = () => {
+    navigation.goBack();
   };
 
   const handleStartCooking = () => {
@@ -165,7 +164,7 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         return (
           <View className="px-5 pb-8">
             {/* Control de porciones */}
-            <View className="bg-primary-100 rounded-2xl p-4 mb-6">
+            <View className="bg-primary-300 rounded-2xl p-4 mb-6">
               <View className="flex-row items-center justify-between">
                 <View className='flex-row'>
                   <Ionicons
@@ -249,27 +248,27 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       case 'Reseñas':
         return (
           <View className="px-5 pb-8">
-            {mockReviews.map((review) => (
+            {reseñas.map((review) => (
               <View
                 key={review.id}
                 className="bg-white rounded-xl p-4 mb-3 shadow-sm"
               >
                 <View className="flex-row items-center mb-2">
-                  <View className="w-10 h-10 bg-primary-100 rounded-full items-center justify-center mr-3">
-                    <Text className="text-lg">{review.avatar}</Text>
+                  <View className="w-10 h-10 bg-primary-300 rounded-full items-center justify-center mr-3">
+                    {/* <Text className="text-lg">{review.avatar}</Text> */}
                   </View>
                   <View className="flex-1">
                     <Text className="text-brown-500 font-medium text-sm">
-                      {review.user}
+                      {review.usuario}
                     </Text>
                     <View className="flex-row mt-1">
-                      {renderStars(review.rating)}
+                      {renderStars(review.puntuacion)}
                     </View>
                   </View>
                 </View>
-                {review.comment && (
+                {review.comentario && (
                   <Text className="text-brown-400 text-sm leading-5 ml-13">
-                    {review.comment}
+                    {review.comentario}
                   </Text>
                 )}
               </View>
@@ -282,9 +281,20 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
+  const addReview = () => {
+    navigation.navigate({
+      name: 'Recipe',
+      params: { action: 'CreateReview', recipe, recipeId },
+    } as never);
+  }
+
+  const esCreador = () => {
+    return recipe.usuario === user.nombre
+  }
+
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-primary-100">
+      <SafeAreaView className="flex-1 bg-primary-300">
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#FF6B1A" />
           <Text className="mt-4 text-brown-500">Cargando receta...</Text>
@@ -295,7 +305,7 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   if (!recipe) {
     return (
-      <SafeAreaView className="flex-1 bg-primary-100">
+      <SafeAreaView className="flex-1 bg-primary-300">
         <View className="flex-1 justify-center items-center">
           <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
           <Text className="mt-4 text-brown-500 text-lg">
@@ -323,7 +333,7 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
               resizeMode="cover"
             />
           ) : (
-            <View className="w-full h-80 bg-primary-100 justify-center items-center">
+            <View className="w-full h-80 bg-primary-300 justify-center items-center">
               <Ionicons name="restaurant-outline" size={80} color="#FF6B1A" />
             </View>
           )}
@@ -388,7 +398,7 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
 
           {/* Tabs */}
-          <View className="flex-row bg-primary-100 rounded-2xl p-1 mb-6">
+          <View className="flex-row bg-primary-300 rounded-2xl p-1 mb-6">
             {(['Ingredientes', 'Preparación', 'Reseñas'] as TabType[]).map((tab) => (
               <TouchableOpacity
                 key={tab}
@@ -427,10 +437,10 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       )} */}
 
       {/* Filtros - Solo visible en tab de reseñas */}
-      {activeTab === 'Reseñas' && (
+      {(activeTab === 'Reseñas' && !esCreador()) && (
         <View className="absolute bottom-6 right-5">
-          <TouchableOpacity className="bg-primary-500 w-14 h-14 rounded-full items-center justify-center shadow-lg">
-            <Ionicons name="options" size={24} color="#FFFFFF" />
+          <TouchableOpacity className="bg-primary-500 w-14 h-14 rounded-full items-center justify-center shadow-lg" onPress={addReview}>
+            <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       )}

@@ -1,115 +1,283 @@
-// src/screens/auth/LoginScreen.tsx
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  RefreshControl,
+  TextInput,
+  Alert
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { AuthStackParamList } from '@/types';
-import { authService } from '@/services/auth';
+import { BrowseStackParamList, Receta, RecetaSearchFilters} from '@/types';
+import { browseService } from '@/services/browse';
+import Navbar from '@/components/global/Navbar';
+import SearchResult from '@/components/browse/SearchResult';
 
-type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
+type SearchResultsScreenNavigationProp = StackNavigationProp<BrowseStackParamList, 'ResultadoBusqueda'>;
+type SearchResultsScreenRouteProp = RouteProp<BrowseStackParamList, 'ResultadoBusqueda'>;
 
 interface Props {
-  navigation: LoginScreenNavigationProp;
+  navigation: SearchResultsScreenNavigationProp;
+  route: SearchResultsScreenRouteProp;
 }
 
-const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+const SearchResultsScreen: React.FC<Props> = ({ navigation, route }) => {
+  const { query } = route.params;
+  
+  const [recetas, setRecetas] = useState<Receta[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState<string>(query.texto || '');
+  const [currentQuery, setCurrentQuery] = useState<RecetaSearchFilters>(query);
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
-      return;
-    }
-
+  // Función para realizar búsqueda
+  const performSearch = async (searchQuery: RecetaSearchFilters, showLoader: boolean = true) => {
     try {
-      setIsLoading(true);
-      const response = await authService.login({ email: email.trim(), password });
-      
-      if (response.success) {
-        Alert.alert('Éxito', 'Login exitoso');
-        // Aquí redirigirías a la pantalla principal
+      if (showLoader) {
+        setIsLoading(true);
       }
+      setError(null);
+      
+      // Llamada al servicio de búsqueda
+      const response = await browseService.buscar({ ...searchQuery, page: 1, limit: 10 });
+
+      console.log(response)
+      
+      if (response.success && response.data) {
+        if (Array.isArray(response.data)) {
+          setRecetas(response.data);
+          console.log(`🔍 ${response.data.length} recetas encontradas`);
+        } else {
+          setRecetas([]);
+          setError('Formato de datos incorrecto');
+        }
+      } else {
+        console.log('❌ Error en búsqueda:', response.message);
+        setError(response.message || 'Error al buscar recetas');
+        setRecetas([]);
+      }
+      
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Error al iniciar sesión');
+      console.error('❌ Error searching recetas:', error);
+      setError('No se pudieron cargar los resultados. Verifica tu conexión.');
+      setRecetas([]);
+      
+      if (error.code === 'NETWORK_ERROR') {
+        Alert.alert(
+          'Error de Conexión', 
+          'No se pudo conectar al servidor. Verifica tu conexión a internet.',
+          [{ text: 'OK', style: 'default' }]
+        );
+      }
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
-  const handleForgotPassword = () => {
-    navigation.navigate('RecuperarClave');
+  // Función para nueva búsqueda
+  const handleNewSearch = () => {
+    if (searchText.trim()) {
+      const newQuery: RecetaSearchFilters = {
+        texto: searchText.trim(),
+        ...currentQuery
+      };
+      setCurrentQuery(newQuery);
+      performSearch(newQuery, true);
+    }
+  };
+
+  // Función para refrescar
+  const onRefresh = async () => {
+    setIsRefreshing(true);
+    await performSearch(currentQuery, false);
+  };
+
+  // Función para ir al detalle de receta
+  const goToRecipeDetail = (receta: Receta) => {
+    // navigation.navigate('RecipeDetail', { recipeId: receta.id });
+  };
+
+  // Cargar resultados iniciales
+  useEffect(() => {
+    performSearch(query, true);
+  }, []);
+
+  // Componente SearchBar para esta pantalla
+  const SearchBar = () => (
+    <View className="px-4 mb-4">
+      <View className="bg-white rounded-xl p-3 shadow-sm flex-row items-center">
+        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
+          <Ionicons name="arrow-back" size={20} color="#B8A898" />
+        </TouchableOpacity>
+        
+        <Ionicons name="search-outline" size={20} color="#B8A898" />
+        <TextInput
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholder="Buscar recetas, ingredientes..."
+          placeholderTextColor="#B8A898"
+          className="flex-1 ml-3 text-brown-500 text-base"
+          onSubmitEditing={handleNewSearch}
+          returnKeyType="search"
+        />
+        
+        {searchText.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchText('')} className="ml-2">
+            <Ionicons name="close-circle" size={20} color="#B8A898" />
+          </TouchableOpacity>
+        )}
+        
+        <TouchableOpacity 
+          onPress={handleNewSearch}
+          className="ml-2 bg-primary-400 p-2 rounded-lg"
+          disabled={!searchText.trim()}
+        >
+          <Ionicons 
+            name="arrow-forward" 
+            size={16} 
+            color={searchText.trim() ? "white" : "#B8A898"} 
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // Estado de carga
+  const LoadingState = () => (
+    <View className="flex-1 justify-center items-center">
+      <ActivityIndicator size="large" color="#FF6B35" />
+      <Text className="text-brown-500 mt-4 text-lg">Buscando recetas...</Text>
+    </View>
+  );
+
+  // Estado de error
+  const ErrorState = () => (
+    <View className="flex-1 justify-center items-center px-8">
+      <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
+      <Text className="text-red-500 text-xl font-bold mt-4 text-center">
+        Error en la búsqueda
+      </Text>
+      <Text className="text-gray-600 text-center mt-2 mb-6">
+        {error || 'No se pudieron cargar los resultados'}
+      </Text>
+      <TouchableOpacity
+        className="bg-primary-400 px-6 py-3 rounded-xl"
+        onPress={() => performSearch(currentQuery, true)}
+      >
+        <Text className="text-white font-bold">Intentar de nuevo</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Estado sin resultados
+  const EmptyState = () => (
+    <View className="flex-1 justify-center items-center px-8">
+      <Ionicons name="search-outline" size={64} color="#B8A898" />
+      <Text className="text-brown-500 text-xl font-bold mt-4 text-center">
+        No se encontraron recetas
+      </Text>
+      <Text className="text-brown-300 text-center mt-2 mb-6">
+        Intenta con otros términos de búsqueda
+      </Text>
+      <TouchableOpacity
+        className="bg-primary-400 px-6 py-3 rounded-xl"
+        onPress={() => navigation.goBack()}
+      >
+        <Text className="text-white font-bold">Volver atrás</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Contenido principal con resultados
+  const ResultsContent = () => (
+    <ScrollView 
+      className="flex-1"
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing} 
+          onRefresh={onRefresh}
+          colors={['#FF6B35']}
+          tintColor="#FF6B35"
+        />
+      }
+    >
+      <SearchBar />
+      
+      <View className="px-4">
+        {/* Header con resultados */}
+        <View className="mb-4">
+          <Text className="text-2xl font-bold text-brown-800 mb-2">
+            Resultado Búsqueda
+          </Text>
+          <View className="bg-primary-400 self-start px-3 py-1 rounded-full">
+            <Text className="text-white text-sm font-medium">
+              Pipón Appetit
+            </Text>
+          </View>
+        </View>
+
+        {/* Contador de resultados */}
+        <View className="mb-4">
+          <Text className="text-brown-500 text-base">
+            {recetas.length} {recetas.length === 1 ? 'receta encontrada' : 'recetas encontradas'}
+            {currentQuery.texto && ` para "${currentQuery.texto}"`}
+          </Text>
+        </View>
+
+        {/* Lista de recetas */}
+        <View className="mb-20">
+          <SearchResult recetas={recetas}></SearchResult>
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  // Renderizado condicional
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <View className="flex-1">
+          <SearchBar />
+          <LoadingState />
+        </View>
+      );
+    }
+    
+    if (error && recetas.length === 0) {
+      return (
+        <View className="flex-1">
+          <SearchBar />
+          <ErrorState />
+        </View>
+      );
+    }
+    
+    if (!isLoading && recetas.length === 0) {
+      return (
+        <View className="flex-1">
+          <SearchBar />
+          <EmptyState />
+        </View>
+      );
+    }
+    
+    return <ResultsContent />;
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary-100">
-      <View className="flex-1 justify-center px-8">
-        {/* Título */}
-        <View className="items-center mb-12">
-          <Text className="text-4xl font-bold text-brown-500 mb-2">
-            Pipón Appétit
-          </Text>
-          <Text className="text-lg text-brown-300">
-            ¡Bienvenido de nuevo!
-          </Text>
-        </View>
-
-        {/* Formulario */}
-        <View className="space-y-4">
-          {/* Campo Usuario */}
-          <View>
-            <Text className="text-brown-500 font-medium mb-2">Usuario</Text>
-            <TextInput
-              className="bg-white rounded-xl px-4 py-4 text-brown-500 border border-brown-200"
-              placeholder="Ingresa tu email"
-              placeholderTextColor="#B8A898"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-
-          {/* Campo Contraseña */}
-          <View>
-            <Text className="text-brown-500 font-medium mb-2">Contraseña</Text>
-            <TextInput
-              className="bg-white rounded-xl px-4 py-4 text-brown-500 border border-brown-200"
-              placeholder="Ingresa tu contraseña"
-              placeholderTextColor="#B8A898"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
-          </View>
-
-          {/* Botón Iniciar Sesión */}
-          <TouchableOpacity
-            className={`bg-primary-400 rounded-xl py-4 items-center mt-6 ${isLoading ? 'opacity-50' : ''}`}
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
-            <Text className="text-white text-lg font-bold">
-              {isLoading ? 'Iniciando...' : 'Iniciar Sesión'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Botón Olvidé mi clave */}
-          <TouchableOpacity
-            className="bg-brown-500 rounded-xl py-4 items-center mt-4"
-            onPress={handleForgotPassword}
-          >
-            <Text className="text-white text-lg font-bold">
-              Olvidé mi clave
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+    <SafeAreaView className="flex-1 bg-primary-50">
+      {renderContent()}
+      <Navbar />
     </SafeAreaView>
   );
 };
 
-export default LoginScreen;
+export default SearchResultsScreen;

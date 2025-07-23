@@ -16,7 +16,7 @@ const RecetaItem: React.FC<RecetaItemProps> = ({ receta }) => {
     const onRecipePress = (receta: Receta) => {
         navigation.navigate({
             name: 'Recipe',
-            params: { recipeId: receta.id, recipe: receta }
+            params: { recipeId: receta.id, recipe: receta, action: 'RecipeDetail'},
         } as never);
     }
 
@@ -29,7 +29,7 @@ const RecetaItem: React.FC<RecetaItemProps> = ({ receta }) => {
         >
             <View className="flex-row">
                 {/* Imagen de la receta */}
-                <View className="w-16 h-16 bg-primary-100 rounded-lg mr-3 justify-center items-center">
+                <View className="w-16 h-16 bg-primary-300 rounded-lg mr-3 justify-center items-center">
                     {receta.media && receta.media.length > 0 ? (
                         <Image
                             source={{ uri: receta.media[0] }}

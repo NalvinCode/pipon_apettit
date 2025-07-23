@@ -2,8 +2,8 @@
 export const API_CONFIG = {
   // URL base de la API - cambiar según el entorno
   BASE_URL: __DEV__ 
-    ? 'http://192.168.1.4:5000/api' // Desarrollo local
-    : 'https://api.piponappetit.com', // Producción
+    ? 'http://192.168.1.4:5000/api/' // Desarrollo local
+    : 'https://pipon-apettit.onrender.com/api', // Producción
   
   // Timeout para requests
   TIMEOUT: 10000, // 10 segundos
