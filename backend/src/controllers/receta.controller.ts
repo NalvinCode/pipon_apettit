@@ -107,7 +107,7 @@ export const listarUltimasRecetas = async (req: AuthenticatedRequest, res: Respo
     try {
         const recetas = await Receta.find()
             .sort({ fechaCreacion: -1 })
-            .limit(10)
+            .limit(3)
             .populate('usuario', 'nombre')
 
         const recetasFormateadas = await Promise.all(recetas.map(receta => formatearReceta(receta)));

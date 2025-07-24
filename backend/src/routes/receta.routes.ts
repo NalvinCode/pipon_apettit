@@ -1,6 +1,14 @@
 import express from 'express';
 import { Request, Response } from 'express';
 import {authenticateToken} from '../utils/jwt';
+import { 
+  uploadMiddleware, 
+  uploadImage, 
+  deleteImage, 
+  getImageInfo,
+  listImages,
+  handleMulterError 
+} from '../controllers/upload.controller';
 import { crearReceta, listarUltimasRecetas, obtenerRecetaPorId, valorarReceta, crearCategoria, listarCategorias, listarValoraciones, buscarRecetas} from '../controllers/receta.controller';
 
 const router = express.Router();

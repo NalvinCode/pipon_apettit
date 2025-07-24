@@ -96,8 +96,6 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     try {
       const response = await userService.toggleFavorite(recipeId);
 
-      const response2 = await userService.listarFavoritos();
-
       if (response.success) {
         setIsFavorite(!isFavorite);
       } else {

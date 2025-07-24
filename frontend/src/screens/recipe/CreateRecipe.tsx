@@ -11,14 +11,18 @@ import {
   StyleSheet,
   Modal,
   FlatList,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import * as ImagePicker from 'expo-image-picker';
+import * as MediaLibrary from 'expo-media-library';
 import { Receta, RecipeStackParamList, Categoria, Ingrediente, Paso } from '@/types';
 import { recipeService } from '@/services/recipe';
 import { useAuth } from '@/contexts/AuthContext';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 type RecipeDetailScreenNavigationProp = StackNavigationProp<RecipeStackParamList, 'CreateRecipe'>;
 type RecipeDetailcreenRouteProp = RouteProp<RecipeStackParamList, 'CreateRecipe'>;
@@ -28,11 +32,19 @@ interface Props {
   route: RecipeDetailcreenRouteProp;
 }
 
-const UNIDADES = ['gr', 'kg', 'ud', 'cda', 'cdta'];
+const UNIDADES = [
+{ label: 'Gramos', value: 'gr' },
+{ label: 'Kilos', value: 'kg' },
+{ label: 'Unidades', value: 'ud' },
+{ label: 'Cucharada', value: 'cda' },
+{ label: 'Cucharadita', value: 'cdta' }
+];
+const { width } = Dimensions.get('window');
 
 const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Estados del formulario
   const [nombre, setNombre] = useState('');
@@ -44,17 +56,20 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
   const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<Categoria[]>([]);
   const [media, setMedia] = useState<string[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [openUnidades, setOpenUnidades] = useState(false);
+  const [unidad, setUnidad] = useState(null);
 
   // Estados para modales
   const [showCategoriaModal, setShowCategoriaModal] = useState(false);
   const [showIngredienteModal, setShowIngredienteModal] = useState(false);
   const [showPasoModal, setShowPasoModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   // Estados para formularios de ingredientes y pasos
   const [nuevoIngrediente, setNuevoIngrediente] = useState({
     nombre: '',
     cantidad: '',
-    unidad: 'gr'
+    unidad: ''
   });
   const [nuevoPaso, setNuevoPaso] = useState({
     descripcion: '',
@@ -62,13 +77,29 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
   });
   const [editingPasoIndex, setEditingPasoIndex] = useState<number | null>(null);
 
+  // Solicitar permisos para cámara y galería
+  useEffect(() => {
+    requestPermissions();
+  }, []);
+
+  const requestPermissions = async () => {
+    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    const { status: mediaLibraryStatus } = await MediaLibrary.requestPermissionsAsync();
+
+    if (cameraStatus !== 'granted' || mediaLibraryStatus !== 'granted') {
+      Alert.alert(
+        'Permisos requeridos',
+        'Se necesitan permisos de cámara y galería para agregar imágenes a las recetas.'
+      );
+    }
+  };
+
   const fetchCategorias = async () => {
     try {
       setLoading(true);
 
       const response = await recipeService.getCategorias();
 
-      // Verificar que la respuesta sea exitosa y tenga datos
       if (response.success && response.data) {
         if (Array.isArray(response.data)) {
           setCategorias(response.data);
@@ -85,7 +116,6 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
     } catch (error: any) {
       setCategorias([]);
 
-      // Solo mostrar Alert si es un error crítico
       if (error.code === 'NETWORK_ERROR') {
         Alert.alert(
           'Error de Conexión',
@@ -98,20 +128,103 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
-
   useEffect(() => {
     fetchCategorias();
   }, []);
+
+  // Funciones para manejo de imágenes
+  const pickImageFromGallery = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'No se pudo seleccionar la imagen');
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'No se pudo tomar la foto');
+    }
+  };
+
+  const uploadImage = async (imageUri: string) => {
+    try {
+      setUploadingImage(true);
+
+      // Crear FormData para subir la imagen
+      const formData = new FormData();
+      formData.append('image', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: `recipe_${Date.now()}.jpg`,
+      } as any);
+
+      // Llamar al servicio para subir la imagen
+      const response = await recipeService.subirImagen(formData);
+
+      if (response.success && response.data.url) {
+        setMedia(prevMedia => [...prevMedia, response.data.url]);
+        setShowImageModal(false);
+        Alert.alert('Éxito', 'Imagen subida correctamente');
+      } else {
+        throw new Error(response.message || 'Error al subir imagen');
+      }
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      Alert.alert('Error', error.message || 'No se pudo subir la imagen');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    Alert.alert(
+      'Eliminar imagen',
+      '¿Estás seguro de que quieres eliminar esta imagen?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => {
+            setMedia(media.filter((_, i) => i !== index));
+          },
+        },
+      ]
+    );
+  };
 
   const agregarIngrediente = () => {
     if (nuevoIngrediente.nombre && nuevoIngrediente.cantidad) {
       const ingrediente: Ingrediente = {
         nombre: nuevoIngrediente.nombre,
         cantidad: Number(nuevoIngrediente.cantidad),
-        unidad: nuevoIngrediente.unidad as any
+        unidad: unidad
       };
       setIngredientes([...ingredientes, ingrediente]);
-      setNuevoIngrediente({ nombre: '', cantidad: '', unidad: 'gr' });
+      setUnidad(null);
+      setNuevoIngrediente({ nombre: '', cantidad: '', unidad});
       setShowIngredienteModal(false);
     }
   };
@@ -123,7 +236,6 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
   const agregarPaso = () => {
     if (nuevoPaso.descripcion) {
       if (editingPasoIndex !== null) {
-        // Editar paso existente
         const pasosActualizados = [...pasos];
         pasosActualizados[editingPasoIndex] = {
           orden: editingPasoIndex + 1,
@@ -133,7 +245,6 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
         setPasos(pasosActualizados);
         setEditingPasoIndex(null);
       } else {
-        // Agregar nuevo paso
         const paso: Paso = {
           orden: pasos.length + 1,
           descripcion: nuevoPaso.descripcion,
@@ -267,6 +378,21 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
     </View>
   );
 
+  const renderImageItem = ({ item, index }: { item: string; index: number }) => (
+    <View className="mr-3 mb-3">
+      <Image
+        source={{ uri: item }}
+        resizeMode="cover"
+      />
+      <TouchableOpacity
+        onPress={() => removeImage(index)}
+        className="absolute -top-2 -right-2 bg-red-500 rounded-full w-6 h-6 items-center justify-center"
+      >
+        <Ionicons name="close" size={16} color="white" />
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-primary-50">
       <ScrollView className="flex-1 px-4 py-6">
@@ -329,6 +455,42 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         </View>
 
+        {/* Imágenes */}
+        <View className="mb-6">
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-lg font-semibold text-brown-800">Imágenes</Text>
+            <TouchableOpacity
+              onPress={() => setShowImageModal(true)}
+              className="bg-primary-500 px-4 py-2 rounded-lg"
+              disabled={uploadingImage}
+            >
+              {uploadingImage ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <Text className="text-white font-medium">Agregar</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {media.length > 0 ? (
+            <FlatList
+              data={media}
+              renderItem={renderImageItem}
+              keyExtractor={(item, index) => index.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              scrollEnabled={false}
+            />
+          ) : (
+            <View className="bg-brown-100 border-2 border-dashed border-brown-300 rounded-lg p-8 items-center">
+              <Ionicons name="image-outline" size={48} color="#B8A898" />
+              <Text className="text-brown-500 mt-2 text-center">
+                Agrega imágenes para hacer tu receta más atractiva
+              </Text>
+            </View>
+          )}
+        </View>
+
         {/* Categorías */}
         <View className="mb-6">
           <View className="flex-row items-center justify-between mb-3">
@@ -341,9 +503,11 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
             </TouchableOpacity>
           </View>
           <View className="flex-row flex-wrap">
-            {categoriasSeleccionadas.map((categoria) => <View key={categoria.id} className="bg-accent-200 px-3 py-1 rounded-full mr-2 mb-2">
-              <Text className="text-brown-800 text-sm">{categoria.nombre}</Text>
-            </View>)}
+            {categoriasSeleccionadas.map((categoria) => (
+              <View key={categoria.id} className="bg-accent-200 px-3 py-1 rounded-full mr-2 mb-2">
+                <Text className="text-brown-800 text-sm">{categoria.nombre}</Text>
+              </View>
+            ))}
           </View>
         </View>
 
@@ -388,7 +552,7 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
         {/* Botón guardar */}
         <TouchableOpacity
           onPress={guardarReceta}
-          disabled={loading}
+          disabled={loading || uploadingImage}
           className="bg-primary-500 p-4 rounded-lg items-center mb-6"
         >
           {loading ? (
@@ -399,12 +563,47 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Modal Categorías */}
+      {/* Modal para seleccionar imagen */}
       <Modal
-        visible={showCategoriaModal}
+        visible={showImageModal}
         animationType="slide"
         transparent={true}
       >
+        <View className="flex-1 justify-center items-center bg-black bg-opacity-50">
+          <View className="bg-white w-4/5 rounded-lg p-6">
+            <Text className="text-lg font-bold text-brown-800 mb-6 text-center">
+              Agregar Imagen
+            </Text>
+
+            <TouchableOpacity
+              onPress={takePhoto}
+              className="bg-primary-500 p-4 rounded-lg mb-3 flex-row items-center justify-center"
+            >
+              <Ionicons name="camera" size={24} color="white" />
+              <Text className="text-white font-medium ml-3">Tomar Foto</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={pickImageFromGallery}
+              className="bg-brown-500 p-4 rounded-lg mb-4 flex-row items-center justify-center"
+            >
+              <Ionicons name="images" size={24} color="white" />
+              <Text className="text-white font-medium ml-3">Seleccionar de Galería</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShowImageModal(false)}
+              className="bg-brown-300 p-3 rounded-lg"
+            >
+              <Text className="text-brown-800 text-center font-medium">Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Resto de modales (categorías, ingredientes, pasos) - igual que antes */}
+      {/* Modal Categorías */}
+      <Modal visible={showCategoriaModal} animationType="slide" transparent={true}>
         <View className="flex-1 justify-center items-center bg-black bg-opacity-50">
           <View className="bg-white w-4/5 max-h-96 rounded-lg p-4">
             <Text className="text-lg font-bold text-brown-800 mb-4">Seleccionar Categorías</Text>
@@ -434,11 +633,7 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
       </Modal>
 
       {/* Modal Ingredientes */}
-      <Modal
-        visible={showIngredienteModal}
-        animationType="slide"
-        transparent={true}
-      >
+      <Modal visible={showIngredienteModal} animationType="slide" transparent={true}>
         <View className="flex-1 justify-center items-center bg-black bg-opacity-50">
           <View className="bg-white w-4/5 rounded-lg p-4">
             <Text className="text-lg font-bold text-brown-800 mb-4">Agregar Ingrediente</Text>
@@ -460,9 +655,14 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
               />
 
               <View className="flex-1 ml-2">
-                <TouchableOpacity className="bg-brown-50 p-3 rounded-lg">
-                  <Text className="text-brown-700">{nuevoIngrediente.unidad}</Text>
-                </TouchableOpacity>
+                  <DropDownPicker
+                    open={openUnidades}
+                    value={unidad}
+                    items={UNIDADES}
+                    setOpen={setOpenUnidades}
+                    setValue={setUnidad}
+                    placeholder='Unidad'
+                  />
               </View>
             </View>
 
@@ -476,6 +676,7 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
               <TouchableOpacity
                 onPress={agregarIngrediente}
                 className="bg-primary-500 p-3 rounded-lg flex-1 ml-2"
+                disabled={!nuevoIngrediente.cantidad || !nuevoIngrediente.nombre || !unidad}
               >
                 <Text className="text-white text-center font-medium">Agregar</Text>
               </TouchableOpacity>
@@ -485,11 +686,7 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
       </Modal>
 
       {/* Modal Pasos */}
-      <Modal
-        visible={showPasoModal}
-        animationType="slide"
-        transparent={true}
-      >
+      <Modal visible={showPasoModal} animationType="slide" transparent={true}>
         <View className="flex-1 justify-center items-center bg-black bg-opacity-50">
           <View className="bg-white w-4/5 rounded-lg p-4">
             <Text className="text-lg font-bold text-brown-800 mb-4">
