@@ -7,12 +7,6 @@ export interface ApiResponse<T = any> {
   errors?: string[];
 }
 
-export interface UploadImageResponse {
-  url: string;
-  fileId: string;
-  fileName: string;
-}
-
 
 export interface PaginatedResponse<T> {
   data: T[];

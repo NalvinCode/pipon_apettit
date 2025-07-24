@@ -66,6 +66,7 @@ export const registrarUsuario = async (req: Request, res: Response) => {
 
 export const loginUsuario = async (req: Request, res: Response) => {
   try {
+    console.log('Login request body:', req.body);
     const { email, password } = req.body;
 
     // Validar campos requeridos

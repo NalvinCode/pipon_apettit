@@ -247,6 +247,14 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       case 'Reseñas':
         return (
           <View className="px-5 pb-8">
+            {/* Filtros - Solo visible en tab de reseñas */}
+            {(!esCreador()) && (
+              <View className="items-center mb-4">
+                <TouchableOpacity className="bg-primary-500 w-14 h-14 rounded-full items-center justify-center shadow-lg" onPress={addReview}>
+                  <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            )}
             {reseñas.map((review) => (
               <View
                 key={review.id}
@@ -272,6 +280,7 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 )}
               </View>
             ))}
+
           </View>
         );
 
@@ -417,14 +426,7 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         {renderTabContent()}
       </ScrollView>
 
-      {/* Filtros - Solo visible en tab de reseñas */}
-      {(activeTab === 'Reseñas' && !esCreador()) && (
-        <View className="absolute bottom-6 right-5">
-          <TouchableOpacity className="bg-primary-500 w-14 h-14 rounded-full items-center justify-center shadow-lg" onPress={addReview}>
-            <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      )}
+
 
       <Navbar></Navbar>
     </SafeAreaView>
