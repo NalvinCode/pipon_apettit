@@ -4,9 +4,7 @@ import {authenticateToken} from '../utils/jwt';
 import { 
   uploadMiddleware, 
   uploadImage, 
-  deleteImage, 
-  getImageInfo,
-  listImages,
+  deleteImage,
   handleMulterError 
 } from '../controllers/upload.controller';
 import { crearReceta, listarUltimasRecetas, obtenerRecetaPorId, valorarReceta, crearCategoria, listarCategorias, listarValoraciones, buscarRecetas} from '../controllers/receta.controller';
@@ -26,8 +24,6 @@ router.get('/pendientes', (req, res) => { });
 
 router.post('/valorar', authenticateToken, valorarReceta);
 router.post('/crearCategoria', authenticateToken, crearCategoria);
-
-
 
 
 export default router;

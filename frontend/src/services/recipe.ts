@@ -28,7 +28,7 @@ export const recipeService = {
   async valorar(recipeId, valoracion): Promise<ApiResponse<Valoracion>> {
     return apiClient.post(`/recetas/valorar/?id=${recipeId}`, valoracion);
   },
-  async subirImagen(formData): Promise<ApiResponse> {
-    return apiClient.put(`/recetas/subirImagen`, formData);
+  async subirImagen(formData : FormData): Promise<ApiResponse> {
+    return apiClient.post(`/upload/subir-imagen`, formData);
   }, 
 };

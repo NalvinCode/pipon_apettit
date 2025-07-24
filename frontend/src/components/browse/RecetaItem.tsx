@@ -2,8 +2,9 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, Image, } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Receta } from '@/types';
+import { Receta, RootStackParamList } from '@/types';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 interface RecetaItemProps {
     receta: Receta;
@@ -11,13 +12,13 @@ interface RecetaItemProps {
 
 const RecetaItem: React.FC<RecetaItemProps> = ({ receta }) => {
 
-    const navigation = useNavigation();
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
     const onRecipePress = (receta: Receta) => {
-        navigation.navigate({
-            name: 'Recipe',
-            params: { recipeId: receta.id, recipe: receta, action: 'RecipeDetail'},
-        } as never);
+        navigation.navigate('Recipe', {
+            screen: "RecipeDetail",
+            params: {recipeId: receta.id, recipe: receta,}
+        });
     }
 
     return (

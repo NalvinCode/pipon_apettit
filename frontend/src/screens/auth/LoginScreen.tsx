@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '@/types';
@@ -14,7 +14,7 @@ interface Props {
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   // ✅ Usar el contexto de autenticación
   const { login, isLoading, error, clearError } = useAuth();
 
@@ -36,7 +36,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
       if (success) {
         console.log('✅ Login exitoso - navegación automática activada');
-        
+
         Alert.alert('Éxito', 'Bienvenido de nuevo!', [
           {
             text: 'OK',
@@ -76,10 +76,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       <View className="flex-1 justify-center px-8">
         {/* Título */}
         <View className="items-center mb-12">
-          <Text className="text-4xl font-bold text-brown-500 mb-2">
-            Pipón Appétit
-          </Text>
-          <Text className="text-lg text-brown-300">
+          <Image
+            source={require('../../media/LoginPipon.png')}
+            resizeMode="cover"
+          />
+          <Text className="text-4xl font-bold text-brown-500 mt-10 mb-2">
             ¡Bienvenido de nuevo!
           </Text>
         </View>

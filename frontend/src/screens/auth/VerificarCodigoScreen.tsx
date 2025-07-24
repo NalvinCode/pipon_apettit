@@ -1,6 +1,6 @@
 // src/screens/auth/VerificarCodigoScreen.tsx
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -21,7 +21,7 @@ const VerificarCodigoScreen: React.FC<Props> = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
-  const {verificarCodigo, recuperarClave} = useAuth();
+  const { verificarCodigo, recuperarClave } = useAuth();
 
   const handleCodeChange = (text: string, index: number) => {
     if (text.length > 1) return; // Solo un dígito
@@ -44,7 +44,7 @@ const VerificarCodigoScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const handleVerifyCode = async () => {
     const codigoCompleto = codigo.join('');
-    
+
     if (codigoCompleto.length !== 4) {
       Alert.alert('Error', 'Por favor ingresa el código completo de 4 dígitos');
       return;
@@ -52,14 +52,14 @@ const VerificarCodigoScreen: React.FC<Props> = ({ navigation, route }) => {
 
     try {
       setIsLoading(true);
-      const success = await verificarCodigo({ 
-        email, 
-        codigo: codigoCompleto 
+      const success = await verificarCodigo({
+        email,
+        codigo: codigoCompleto
       });
-      
+
       if (success) {
         navigation.navigate('NuevaClave', { email, codigo: codigoCompleto });
-      }else {
+      } else {
         Alert.alert('Codigo incorrecto');
         setCodigo(['', '', '', '']);
         inputRefs.current[0]?.focus();
@@ -95,11 +95,15 @@ const VerificarCodigoScreen: React.FC<Props> = ({ navigation, route }) => {
       <View className="flex-1 justify-center px-8">
         {/* Título */}
         <View className="items-center mb-12">
+          <Image
+            source={require('../../media/VerifyPipon.png')}
+            resizeMode="cover"
+          />
           <Text className="text-3xl font-bold text-brown-500 mb-4">
             Verificar Código
           </Text>
-          <Text className="text-brown-300 text-center leading-6">
-            Ingresa el código de 4 dígitos que enviamos a
+          <Text className="text-brown-500 text-center leading-6">
+            Ingresá el código que enviamos a tu email:
           </Text>
           <Text className="text-primary-400 font-medium mt-1">
             {email}
@@ -112,9 +116,8 @@ const VerificarCodigoScreen: React.FC<Props> = ({ navigation, route }) => {
             <TextInput
               key={index}
               ref={(ref) => { inputRefs.current[index] = ref; }}
-              className={`w-16 h-16 bg-white rounded-xl text-center text-2xl font-bold text-brown-500 border-2 ${
-                digito ? 'border-primary-400' : 'border-brown-200'
-              }`}
+              className={`w-16 h-16 bg-white rounded-xl text-center text-2xl font-bold text-brown-500 border-2 ${digito ? 'border-primary-400' : 'border-brown-200'
+                }`}
               value={digito}
               onChangeText={(text) => handleCodeChange(text, index)}
               onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
@@ -139,9 +142,8 @@ const VerificarCodigoScreen: React.FC<Props> = ({ navigation, route }) => {
 
           {/* Botón Confirmar */}
           <TouchableOpacity
-            className={`bg-primary-400 rounded-xl py-4 items-center ${
-              codigo.join('').length !== 4 || isLoading ? 'opacity-50' : ''
-            }`}
+            className={`bg-primary-400 rounded-xl py-4 items-center ${codigo.join('').length !== 4 || isLoading ? 'opacity-50' : ''
+              }`}
             onPress={handleVerifyCode}
             disabled={codigo.join('').length !== 4 || isLoading}
           >

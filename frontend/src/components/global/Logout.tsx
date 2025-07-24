@@ -24,7 +24,7 @@ const Logout: React.FC = () => {
 
     return (
         <TouchableOpacity
-            className="items-center justify-center p-2 rounded-xl"
+            className="items-center p-2 rounded-xl"
             activeOpacity={0.7}
             onPress={handleLogout}
         >

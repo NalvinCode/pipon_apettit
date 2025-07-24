@@ -4,22 +4,11 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import googleDriveService from '../service/googleDriveService';
+import { ApiResponse, UploadImageResponse } from '../types';
 
 // Interfaces
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
-}
-
-interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
-
-interface UploadImageResponse {
-  url: string;
-  fileId: string;
-  fileName: string;
 }
 
 interface DeleteImageRequest {
@@ -70,9 +59,11 @@ const upload = multer({
 
 // Controlador para subir imagen
 const uploadImage = async (req: MulterRequest, res: Response): Promise<void> => {
+  console.log("test")
   let tempFilePath: string | null = null;
   
   try {
+    // Validar que se haya recibido un archivo
     if (!req.file) {
       res.status(400).json({
         success: false,
@@ -84,8 +75,34 @@ const uploadImage = async (req: MulterRequest, res: Response): Promise<void> => 
     tempFilePath = req.file.path;
     const fileName = req.file.filename;
     const mimeType = req.file.mimetype;
+    const fileSize = req.file.size;
 
-    console.log(`📤 Subiendo imagen: ${fileName}`);
+    console.log(`📤 Procesando imagen: ${fileName}`);
+    console.log(`📊 Tamaño: ${(fileSize / 1024 / 1024).toFixed(2)}MB, Tipo: ${mimeType}`);
+
+    // Validaciones adicionales
+    if (fileSize > 10 * 1024 * 1024) { // 10MB
+      await fs.unlink(tempFilePath); // Limpiar archivo
+      res.status(400).json({
+        success: false,
+        message: 'La imagen es demasiado grande. Máximo 10MB permitido.'
+      } as ApiResponse);
+      return;
+    }
+
+    // Verificar que el archivo existe
+    try {
+      await fs.access(tempFilePath);
+    } catch (accessError) {
+      console.error('Archivo temporal no accesible:', accessError);
+      res.status(500).json({
+        success: false,
+        message: 'Error procesando la imagen'
+      } as ApiResponse);
+      return;
+    }
+
+    console.log(`☁️ Subiendo a Google Drive: ${fileName}`);
 
     // Subir a Google Drive
     const driveResult = await googleDriveService.uploadImage(
@@ -94,11 +111,20 @@ const uploadImage = async (req: MulterRequest, res: Response): Promise<void> => 
       mimeType
     );
 
-    // Eliminar archivo temporal
-    await fs.unlink(tempFilePath);
-    tempFilePath = null;
+    console.log(`✅ Imagen subida exitosamente: ${driveResult.fileId}`);
 
-    res.json({
+    // Eliminar archivo temporal
+    try {
+      await fs.unlink(tempFilePath);
+      console.log(`🧹 Archivo temporal eliminado: ${fileName}`);
+      tempFilePath = null;
+    } catch (unlinkError) {
+      console.warn('No se pudo eliminar archivo temporal:', unlinkError);
+      // No es crítico, continuar
+    }
+
+    // Respuesta exitosa
+    res.status(200).json({
       success: true,
       data: {
         url: driveResult.publicUrl,
@@ -109,20 +135,48 @@ const uploadImage = async (req: MulterRequest, res: Response): Promise<void> => 
     } as ApiResponse<UploadImageResponse>);
 
   } catch (error: any) {
-    console.error('Error uploading image:', error);
+    console.error('❌ Error uploading image:', error);
     
     // Limpiar archivo temporal si existe
     if (tempFilePath) {
       try {
         await fs.unlink(tempFilePath);
+        console.log(`🧹 Archivo temporal limpiado tras error: ${tempFilePath}`);
       } catch (unlinkError) {
-        console.error('Error eliminando archivo temporal:', unlinkError);
+        console.error('Error eliminando archivo temporal tras fallo:', unlinkError);
       }
     }
 
-    res.status(500).json({
+    // Determinar tipo de error y respuesta apropiada
+    let statusCode = 500;
+    let errorMessage = 'Error interno del servidor al subir la imagen';
+
+    if (error.message?.includes('Google Drive')) {
+      statusCode = 503; // Service Unavailable
+      errorMessage = 'Servicio de almacenamiento temporalmente no disponible';
+    } else if (error.message?.includes('credentials') || error.message?.includes('authentication')) {
+      statusCode = 500;
+      errorMessage = 'Error de configuración del servidor';
+      console.error('🔐 Error de credenciales de Google Drive');
+    } else if (error.message?.includes('quota') || error.message?.includes('limit')) {
+      statusCode = 507; // Insufficient Storage
+      errorMessage = 'Límite de almacenamiento alcanzado';
+    } else if (error.code === 'ENOENT') {
+      statusCode = 400;
+      errorMessage = 'Archivo no encontrado o corrupto';
+    }
+
+    res.status(statusCode).json({
       success: false,
-      message: error.message || 'Error interno del servidor al subir la imagen'
+      message: errorMessage,
+      // Solo en desarrollo, incluir detalles del error
+      ...(process.env.NODE_ENV === 'development' && { 
+        debug: {
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack?.split('\n').slice(0, 3).join('\n')
+        }
+      })
     } as ApiResponse);
   }
 };
@@ -164,55 +218,6 @@ const deleteImage = async (req: Request<{}, {}, DeleteImageRequest>, res: Respon
     res.status(500).json({
       success: false,
       message: error.message || 'Error interno del servidor al eliminar la imagen'
-    } as ApiResponse);
-  }
-};
-
-// Controlador para obtener información de imagen
-const getImageInfo = async (req: Request<{ fileId: string }>, res: Response): Promise<void> => {
-  try {
-    const { fileId } = req.params;
-
-    if (!fileId) {
-      res.status(400).json({
-        success: false,
-        message: 'ID de archivo requerido'
-      } as ApiResponse);
-      return;
-    }
-
-    const fileInfo = await googleDriveService.getFileInfo(fileId);
-
-    res.json({
-      success: true,
-      data: fileInfo
-    } as ApiResponse);
-
-  } catch (error: any) {
-    console.error('Error getting image info:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener información de la imagen'
-    } as ApiResponse);
-  }
-};
-
-// Controlador para listar todas las imágenes
-const listImages = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const images = await googleDriveService.listImages();
-
-    res.json({
-      success: true,
-      data: images,
-      count: images.length
-    } as ApiResponse);
-
-  } catch (error: any) {
-    console.error('Error listing images:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al listar imágenes'
     } as ApiResponse);
   }
 };
@@ -279,7 +284,5 @@ export {
   uploadMiddleware,
   uploadImage,
   deleteImage,
-  getImageInfo,
-  listImages,
   handleMulterError
 };

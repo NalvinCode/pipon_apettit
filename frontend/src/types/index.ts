@@ -1,4 +1,7 @@
 // src/types/index.ts
+
+import { NavigatorScreenParams } from "@react-navigation/native";
+
 // Tipos base para respuestas de API
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -37,6 +40,12 @@ export interface AuthUser {
   id: string;
   email: string;
   nombre: string;
+}
+
+export interface UserData {
+  nombre: string;
+  email: string;
+  bio: string;
 }
 
 export interface Ingrediente {
@@ -87,6 +96,12 @@ export interface AuthUser {
   nombre: string;
 }
 
+export interface PerfilData {
+  nombre: string;
+  email: string;
+  bio:string;
+}
+
 export interface AuthResponse{
   usuario: AuthUser;
   token: string;
@@ -102,9 +117,16 @@ export interface VerificarCodigoData {
 }
 
 export interface ActualizarClaveData {
-  email: string;
-  codigo: string;
+  email?: string;
+  codigo?: string;
+  claveActual?: string;
   nuevaClave: string;
+}
+
+export interface ActualizarPerfilData {
+  nombre: string;
+  email: string;
+  bio: string;
 }
 
 export interface RecetaSearchFilters extends PaginatedRequest{
@@ -118,12 +140,6 @@ export interface RecetaSearchFilters extends PaginatedRequest{
 }
 
 // Tipos de navegación
-export type RootStackParamList = {
-  Auth: undefined;
-  Browse: undefined;
-  Recipe: { recipeId: string; recipe?: any };
-};
-
 export type AuthStackParamList = {
   Login: undefined;
   NuevaClave: { email: string; codigo: string };
@@ -140,7 +156,19 @@ export type BrowseStackParamList = {
 };
 
 export type RecipeStackParamList = {
-  RecipeDetail: {recipeId: string; recipe: Receta };
+  RecipeDetail: {recipeId: string; recipe?: Receta };
   CreateRecipe: undefined;
   CreateReview: {recipeId?: string, recipeName: string}
+};
+
+export type ProfileStackParamList = {
+  UserProfile: undefined;
+  Settings: undefined;
+};
+
+export type RootStackParamList = {
+  Auth: NavigatorScreenParams<AuthStackParamList>;
+  Browse: NavigatorScreenParams<BrowseStackParamList>;
+  Recipe: NavigatorScreenParams<RecipeStackParamList>;
+  Profile: NavigatorScreenParams<ProfileStackParamList>;
 };

@@ -16,6 +16,7 @@ import { Receta, RecipeStackParamList, Valoracion } from '@/types';
 import { recipeService } from '@/services/recipe';
 import { useAuth } from '@/contexts/AuthContext';
 import { userService } from '@/services/user';
+import Navbar from '@/components/global/Navbar';
 
 type RecipeDetailScreenNavigationProp = StackNavigationProp<RecipeStackParamList, 'RecipeDetail'>;
 type RecipeDetailcreenRouteProp = RouteProp<RecipeStackParamList, 'RecipeDetail'>;
@@ -280,10 +281,7 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const addReview = () => {
-    navigation.navigate({
-      name: 'Recipe',
-      params: { action: 'CreateReview', recipe, recipeId },
-    } as never);
+    navigation.navigate('CreateReview', { recipeId: recipeId, recipeName: recipe.nombre });
   }
 
   const esCreador = () => {
@@ -419,21 +417,6 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         {renderTabContent()}
       </ScrollView>
 
-      {/* Botón empezar a cocinar */}
-      {/* {!isStartCooking && (
-        <View className="px-5 pb-6 pt-4 bg-white border-t border-gray-100">
-          <TouchableOpacity
-            onPress={handleStartCooking}
-            className="bg-primary-500 py-4 rounded-2xl flex-row items-center justify-center"
-          >
-            <Text className="text-white font-bold text-lg mr-2">
-              Empezar a cocinar
-            </Text>
-            <Ionicons name="play" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      )} */}
-
       {/* Filtros - Solo visible en tab de reseñas */}
       {(activeTab === 'Reseñas' && !esCreador()) && (
         <View className="absolute bottom-6 right-5">
@@ -442,6 +425,8 @@ const RecipeDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       )}
+
+      <Navbar></Navbar>
     </SafeAreaView>
   );
 };

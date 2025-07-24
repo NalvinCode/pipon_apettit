@@ -23,6 +23,7 @@ import { Receta, RecipeStackParamList, Categoria, Ingrediente, Paso } from '@/ty
 import { recipeService } from '@/services/recipe';
 import { useAuth } from '@/contexts/AuthContext';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { API_CONFIG } from '@/config/api';
 
 type RecipeDetailScreenNavigationProp = StackNavigationProp<RecipeStackParamList, 'CreateRecipe'>;
 type RecipeDetailcreenRouteProp = RouteProp<RecipeStackParamList, 'CreateRecipe'>;
@@ -33,11 +34,11 @@ interface Props {
 }
 
 const UNIDADES = [
-{ label: 'Gramos', value: 'gr' },
-{ label: 'Kilos', value: 'kg' },
-{ label: 'Unidades', value: 'ud' },
-{ label: 'Cucharada', value: 'cda' },
-{ label: 'Cucharadita', value: 'cdta' }
+  { label: 'Gramos', value: 'gr' },
+  { label: 'Kilos', value: 'kg' },
+  { label: 'Unidades', value: 'ud' },
+  { label: 'Cucharada', value: 'cda' },
+  { label: 'Cucharadita', value: 'cdta' }
 ];
 const { width } = Dimensions.get('window');
 
@@ -168,31 +169,93 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
+  const detectImageType = (uri: string): string => {
+    const extension = uri.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'png':
+        return 'image/png';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/jpeg'; // Por defecto
+    }
+  };
+
+  const generateImageName = (uri: string): string => {
+    const extension = uri.split('.').pop()?.toLowerCase() || 'jpg';
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `recipe_${timestamp}_${random}.${extension}`;
+  };
+
   const uploadImage = async (imageUri: string) => {
     try {
       setUploadingImage(true);
 
-      // Crear FormData para subir la imagen
+      // Detectar tipo de imagen y generar nombre
+      const imageType = detectImageType(imageUri);
+      const imageName = generateImageName(imageUri);
+
+      console.log(`📤 Preparando imagen: ${imageName} (${imageType})`);
+
+      // Crear FormData para React Native
       const formData = new FormData();
+
+      // IMPORTANTE: En React Native, el objeto debe tener exactamente estas propiedades
+
       formData.append('image', {
         uri: imageUri,
-        type: 'image/jpeg',
-        name: `recipe_${Date.now()}.jpg`,
+        type: imageType,
+        name: imageName,
       } as any);
+
+      console.log('📤 Subiendo imagen al servidor...');
 
       // Llamar al servicio para subir la imagen
       const response = await recipeService.subirImagen(formData);
 
-      if (response.success && response.data.url) {
+      if (response.success && response.data?.url) {
+        // Agregar la nueva imagen al estado
         setMedia(prevMedia => [...prevMedia, response.data.url]);
         setShowImageModal(false);
-        Alert.alert('Éxito', 'Imagen subida correctamente');
+
+        Alert.alert(
+          'Éxito',
+          'Imagen subida correctamente',
+          [{ text: 'OK', style: 'default' }]
+        );
+
+        console.log('✅ Imagen subida exitosamente:', response.data.url);
       } else {
         throw new Error(response.message || 'Error al subir imagen');
       }
     } catch (error: any) {
-      console.error('Error uploading image:', error);
-      Alert.alert('Error', error.message || 'No se pudo subir la imagen');
+      console.error('❌ Error uploading image:', error);
+
+      // Mostrar error específico según el tipo
+      let errorMessage = 'No se pudo subir la imagen';
+
+      if (error.message.includes('conexión')) {
+        errorMessage = 'Error de conexión. Verifica tu internet.';
+      } else if (error.message.includes('demasiado grande')) {
+        errorMessage = 'La imagen es demasiado grande. Intenta con una más pequeña.';
+      } else if (error.message.includes('formato')) {
+        errorMessage = 'Formato de imagen no válido. Usa JPG, PNG o WebP.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert(
+        'Error al subir imagen',
+        errorMessage,
+        [
+          { text: 'Reintentar', onPress: () => uploadImage(imageUri) },
+          { text: 'Cancelar', style: 'cancel' }
+        ]
+      );
     } finally {
       setUploadingImage(false);
     }
@@ -224,7 +287,7 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
       };
       setIngredientes([...ingredientes, ingrediente]);
       setUnidad(null);
-      setNuevoIngrediente({ nombre: '', cantidad: '', unidad});
+      setNuevoIngrediente({ nombre: '', cantidad: '', unidad });
       setShowIngredienteModal(false);
     }
   };
@@ -655,14 +718,14 @@ const CreateRecipeScreen: React.FC<Props> = ({ navigation, route }) => {
               />
 
               <View className="flex-1 ml-2">
-                  <DropDownPicker
-                    open={openUnidades}
-                    value={unidad}
-                    items={UNIDADES}
-                    setOpen={setOpenUnidades}
-                    setValue={setUnidad}
-                    placeholder='Unidad'
-                  />
+                <DropDownPicker
+                  open={openUnidades}
+                  value={unidad}
+                  items={UNIDADES}
+                  setOpen={setOpenUnidades}
+                  setValue={setUnidad}
+                  placeholder='Elija Unidad'
+                />
               </View>
             </View>
 

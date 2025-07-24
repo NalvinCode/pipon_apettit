@@ -2,19 +2,22 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '@/services/auth';
-import { 
-  LoginCredentials, 
-  AuthResponse, 
-  RecuperarClaveData, 
-  VerificarCodigoData, 
-  ActualizarClaveData 
+import {
+  LoginCredentials,
+  AuthResponse,
+  RecuperarClaveData,
+  VerificarCodigoData,
+  ActualizarClaveData,
+  ActualizarPerfilData
 } from '@/types';
+import { userService } from '@/services/user';
 
 // Tipos para el estado de autenticación
 export interface User {
   id: string;
   email: string;
   nombre: string;
+  bio?: string;
   rol?: string;
   // Agregar otros campos según tu modelo de usuario
 }
@@ -34,7 +37,8 @@ type AuthAction =
   | { type: 'AUTH_ERROR'; payload: string }
   | { type: 'LOGOUT' }
   | { type: 'CLEAR_ERROR' }
-  | { type: 'SET_LOADING'; payload: boolean };
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'UPDATE_USER'; payload: User };
 
 // Estado inicial
 const initialState: AuthState = {
@@ -91,6 +95,13 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         isLoading: action.payload,
       };
+    case 'UPDATE_USER':
+      return {
+        ...state,
+        user: action.payload,
+        isLoading: false,
+        error: null,
+      };
     default:
       return state;
   }
@@ -103,6 +114,8 @@ interface AuthContextType extends AuthState {
   recuperarClave: (data: RecuperarClaveData) => Promise<boolean>;
   verificarCodigo: (data: VerificarCodigoData) => Promise<boolean>;
   actualizarClave: (data: ActualizarClaveData) => Promise<boolean>;
+  cambiarContraseñaPerfil: (data: ActualizarClaveData) => Promise<boolean>;
+  actualizarPerfil: (data: ActualizarPerfilData) => Promise<boolean>;
   clearError: () => void;
   checkAuthStatus: () => Promise<void>;
 }
@@ -162,18 +175,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const checkAuthStatus = async (): Promise<void> => {
     try {
       console.log('🔍 Verificando estado de autenticación...');
-      
+
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       const userStr = await AsyncStorage.getItem(USER_KEY);
 
       if (token && userStr) {
         const user = JSON.parse(userStr);
-        
+
         console.log('✅ Token encontrado, usuario:', user.nombre);
-        
+
         // Aquí podrías hacer una verificación del token con el backend
         // Por ejemplo: await apiClient.get('/auth/verify-token')
-        
+
         dispatch({
           type: 'AUTH_SUCCESS',
           payload: { user, token }
@@ -191,28 +204,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Función de login
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
-    try { 
+    try {
       console.log('🚀 Iniciando login para:', credentials.email);
       dispatch({ type: 'AUTH_START' });
-      
+
       const response = await authService.login(credentials);
 
       console.log('🔄 Respuesta del servicio de autenticación:', response);
-      
+
       if (response.success && response.data) {
         const { usuario, token } = response.data;
-        
+
         console.log('✅ Login exitoso para:', usuario.nombre);
-        
+
         // Guardar en AsyncStorage
         await saveAuthData(usuario, token);
-        
+
         // Actualizar estado
         dispatch({
           type: 'AUTH_SUCCESS',
           payload: { user: usuario, token }
         });
-        
+
         console.log('🔄 Estado de autenticación actualizado');
         return true;
       } else {
@@ -253,9 +266,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('📧 Recuperando clave para:', data.email);
       dispatch({ type: 'AUTH_START' });
-      
+
       const response = await authService.recuperarClave(data);
-      
+
       if (response.success) {
         console.log('✅ Email de recuperación enviado');
         dispatch({ type: 'SET_LOADING', payload: false });
@@ -284,9 +297,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('🔢 Verificando código para:', data.email);
       dispatch({ type: 'AUTH_START' });
-      
+
       const response = await authService.verificarCodigo(data);
-      
+
       if (response.success) {
         console.log('✅ Código verificado correctamente');
         // Guardar usuario y token en AsyncStorage
@@ -317,9 +330,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('🔑 Actualizando clave para:', data.email);
       dispatch({ type: 'AUTH_START' });
-      
+
       const response = await authService.actualizarClave(data);
-      
+
       if (response.success) {
         console.log('✅ Clave actualizada correctamente');
         clearAuthData(); // Limpiar datos de auth
@@ -335,6 +348,74 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error: any) {
       console.log('❌ Error de conexión en actualizar clave:', error.message);
+      const errorMessage = error.response?.data?.message || 'Error de conexión';
+      dispatch({
+        type: 'AUTH_ERROR',
+        payload: errorMessage
+      });
+      return false;
+    }
+  };
+
+  // Función para actualizar clave desde configuracion
+  const cambiarContraseñaPerfil = async (data: ActualizarClaveData): Promise<boolean> => {
+    try {
+      console.log('🔑 Actualizando clave para:', data.email);
+      dispatch({ type: 'AUTH_START' });
+
+      const response = await userService.cambiarContraseña(data);
+
+      if (response.success) {
+        console.log('✅ Clave actualizada correctamente');
+        return true;
+      } else {
+        console.log('❌ Error al actualizar clave:', response.message);
+        return false;
+      }
+    } catch (error: any) {
+      console.log('❌ Error de conexión en actualizar clave:', error.message);
+      return false;
+    } finally {
+      // Solo cambiar el estado de loading sin limpiar datos de auth
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  // Función para actualizar perfil
+  const actualizarPerfil = async (data: ActualizarPerfilData): Promise<boolean> => {
+    try {
+      console.log('👤 Actualizando perfil de usuario...');
+      dispatch({ type: 'AUTH_START' });
+
+      // Llamar al servicio de actualización de perfil
+      const response = await userService.actualizarPerfil(data);
+
+      if (response.success && response.data) {
+        const updatedUser = response.data.user;
+
+        console.log('✅ Perfil actualizado correctamente:', updatedUser.nombre);
+
+        // Actualizar el usuario en AsyncStorage
+        await AsyncStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+
+        // Actualizar el estado del contexto
+        dispatch({
+          type: 'UPDATE_USER',
+          payload: updatedUser
+        });
+
+        console.log('🔄 Estado de usuario actualizado en el contexto');
+        return true;
+      } else {
+        console.log('❌ Error al actualizar perfil:', response.message);
+        dispatch({
+          type: 'AUTH_ERROR',
+          payload: response.message || 'Error al actualizar perfil'
+        });
+        return false;
+      }
+    } catch (error: any) {
+      console.log('❌ Error de conexión en actualizar perfil:', error.message);
       const errorMessage = error.response?.data?.message || 'Error de conexión';
       dispatch({
         type: 'AUTH_ERROR',
@@ -373,9 +454,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     recuperarClave,
     verificarCodigo,
     actualizarClave,
+    cambiarContraseñaPerfil,
+    actualizarPerfil,
     clearError,
     checkAuthStatus,
-  };  
+  };
 
   return (
     <AuthContext.Provider value={contextValue}>
@@ -427,7 +510,7 @@ export const withAuth = <P extends object>(
 // Hook adicional para debugging (útil durante desarrollo)
 export const useAuthDebug = () => {
   const auth = useAuth();
-  
+
   useEffect(() => {
     const debugInfo = {
       isAuthenticated: auth.isAuthenticated,
@@ -437,10 +520,10 @@ export const useAuthDebug = () => {
       userName: auth.user?.nombre,
       error: auth.error
     };
-    
+
     console.log('🐛 Auth Debug Info:', debugInfo);
   }, [auth]);
-  
+
   return auth;
 };
 
@@ -455,7 +538,7 @@ export const authStorage = {
       return null;
     }
   },
-  
+
   // Obtener usuario guardado
   getUser: async (): Promise<User | null> => {
     try {
@@ -466,7 +549,7 @@ export const authStorage = {
       return null;
     }
   },
-  
+
   // Verificar si hay datos de auth
   hasAuthData: async (): Promise<boolean> => {
     try {
@@ -478,7 +561,7 @@ export const authStorage = {
       return false;
     }
   },
-  
+
   // Limpiar todos los datos de auth
   clearAll: async (): Promise<void> => {
     try {

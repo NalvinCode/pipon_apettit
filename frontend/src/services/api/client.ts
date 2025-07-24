@@ -52,7 +52,7 @@ class ApiClient {
         // Si el token expiró (401), limpiar datos de auth
         if (error.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
-          
+
           try {
             await AsyncStorage.multiRemove([
               STORAGE_KEYS.AUTH_TOKEN,
@@ -71,6 +71,7 @@ class ApiClient {
 
   private handleError(error: any): ErrorResponse {
     if (error.response) {
+      console.log(error.response.data)
       // Error del servidor
       return {
         error: error.response.data?.error || 'Error del servidor',
@@ -104,11 +105,26 @@ class ApiClient {
     return response.data;
   }
 
-  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async post<T>(url: string, data?: any, config: AxiosRequestConfig = {}): Promise<ApiResponse<T>> {
     this.setupInterceptors();
+
+    const isFormData = data && typeof data.getParts === 'function';
+
+    config.headers = config.headers || {};
+
+    if (isFormData) {
+      delete config.headers['Content-Type']; // dejar que axios la genere
+    } else {
+      config.headers['Content-Type'] = 'application/json';
+    }
+
+    console.log('📤 Headers usados:', config.headers);
+
     const response = await this.instance.post<ApiResponse<T>>(url, data, config);
     return response.data;
   }
+
+
 
   async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     this.setupInterceptors();

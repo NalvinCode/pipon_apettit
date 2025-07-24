@@ -18,12 +18,6 @@ interface Props {
 }
 
 const RecipeNavigator: React.FC<Props> = ({ route }) => {
-
-  const params = route.params as { recipeId?: string; recipe?: Receta; action: string} | undefined;
-
-  const recipeId = params?.recipeId;
-  const recipe = params?.recipe;
-  const action = params?.action;
   
   return (
     <Stack.Navigator
@@ -33,15 +27,9 @@ const RecipeNavigator: React.FC<Props> = ({ route }) => {
         animation: 'slide_from_right',
       }}
     >
-      {
-        action === 'RecipeDetail' && <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} initialParams={{recipeId, recipe}} />
-      }
-      {
-        action === 'CreateRecipe' && <Stack.Screen name="CreateRecipe" component={CreateRecipe}/>
-      }
-      {
-        action === 'CreateReview' && <Stack.Screen name="CreateReview" component={CreateReview} initialParams={{recipeId, recipeName: recipe.nombre}}/>
-      }
+      <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} initialParams={route.params} />
+      <Stack.Screen name="CreateRecipe" component={CreateRecipe}/>
+      <Stack.Screen name="CreateReview" component={CreateReview} initialParams={route.params}/>
     </Stack.Navigator>
   );
 };

@@ -19,6 +19,7 @@ import { BrowseStackParamList, RecetaSearchFilters } from '@/types';
 import { browseService } from '@/services/browse';
 import { useAuth } from '@/contexts/AuthContext';
 import SearchBar from '@/components/browse/SearchBar';
+import Header from '@/components/global/Header';
 
 type IndexScreenNavigationProp = StackNavigationProp<BrowseStackParamList, 'Index'>;
 
@@ -96,13 +97,8 @@ const IndexScreen: React.FC<Props> = ({ navigation }) => {
       };
 
       // Navegar a la pantalla de resultados de búsqueda
-      navigation.navigate({
-        name: 'ResultadoBusqueda',
-        params: {
-          query,
-          searchText: searchText.trim()
-        },
-      } as never);
+      navigation.navigate('ResultadoBusqueda',{ query });
+      
     }
   }, [searchQuery, navigation]);
 
@@ -192,16 +188,6 @@ const IndexScreen: React.FC<Props> = ({ navigation }) => {
       />
 
       <View className="px-4">
-        {/* Header con saludo personalizado */}
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-brown-500">
-            ¡Hola, {user?.nombre}! 👋
-          </Text>
-          <Text className="text-brown-300 text-lg mt-1">
-            Descubre las últimas recetas
-          </Text>
-        </View>
-
         {/* Lista de recetas */}
         <View className="mb-4">
           <View className="flex-row justify-between items-center mb-3">
@@ -265,6 +251,8 @@ const IndexScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView className="flex-1 bg-primary-300">
+      <Header/>
+
       {/* Contenido principal */}
       {renderContent()}
 

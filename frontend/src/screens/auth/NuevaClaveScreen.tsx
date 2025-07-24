@@ -1,11 +1,12 @@
 // src/screens/auth/NuevaClaveScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Image} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { AuthStackParamList } from '@/types';
 import { useAuth } from '@/contexts/AuthContext'; // ← Importar useAuth
+import Header from '@/components/global/Header';
 
 type NuevaClaveScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'NuevaClave'>;
 type NuevaClaveScreenRouteProp = RouteProp<AuthStackParamList, 'NuevaClave'>;
@@ -75,11 +76,15 @@ const NuevaClaveScreen: React.FC<Props> = ({ navigation, route }) => {
       <View className="flex-1 justify-center px-8">
         {/* Título */}
         <View className="items-center mb-12">
+          <Image
+            source={require('../../media/RecoverPipon.png')}
+            resizeMode="cover"
+          />
           <Text className="text-3xl font-bold text-brown-500 mb-4">
-            Nueva Contraseña
+            Cambiar Clave
           </Text>
-          <Text className="text-brown-300 text-center leading-6">
-            Crea una nueva contraseña segura para tu cuenta
+          <Text className="text-brown-500 text-center leading-6">
+            Ingresá tu nueva claveaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
           </Text>
         </View>
 

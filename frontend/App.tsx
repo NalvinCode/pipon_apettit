@@ -6,6 +6,7 @@ import { NavigationContainer } from '@react-navigation/native';
 
 import { AuthProvider } from '@/contexts/AuthContext';
 import RootNavigator from '@/navigation/RootNavigator';
+import Navbar from '@/components/global/Navbar';
 
 export default function App() {
   return (

@@ -9,6 +9,7 @@ import BrowseNavigator from './BrowseNavigator';
 import RecipeNavigator from './RecipeNavigator';
 
 import {RootStackParamList} from '../types/index'
+import ProfileNavigator from './ProfileNavigator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -33,6 +34,14 @@ export default function RootNavigator() {
           <Stack.Screen
             name="Recipe"
             component={RecipeNavigator}
+            options={{
+              gestureEnabled: true, // Permitir swipe back desde recetas
+              presentation: 'modal', // Presentación como modal (opcional)
+            }}
+          />
+          <Stack.Screen
+            name="Profile"
+            component={ProfileNavigator}
             options={{
               gestureEnabled: true, // Permitir swipe back desde recetas
               presentation: 'modal', // Presentación como modal (opcional)

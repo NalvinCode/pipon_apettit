@@ -39,7 +39,7 @@ export const formatearReceta = async (receta: any): Promise<RecetaType> => {
 
 export const crearReceta = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { nombre, porciones, descripcion, ingredientes, pasos, categorias, media } = req.body;
+        const { nombre, porciones, descripcion, ingredientes, pasos, categorias, media, tiempo} = req.body;
 
         // Validar campos requeridos
         if (!nombre || !descripcion || !ingredientes || !pasos) {
@@ -62,6 +62,7 @@ export const crearReceta = async (req: AuthenticatedRequest, res: Response) => {
             media,
             usuario: user?.id, // Asignar el usuario autenticado
             fechaCreacion: new Date(),
+            tiempo
         });
 
         await nuevaReceta.save();

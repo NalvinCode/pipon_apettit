@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,10 +14,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { BrowseStackParamList, Receta, RecetaSearchFilters} from '@/types';
+import { BrowseStackParamList, Receta, RecetaSearchFilters } from '@/types';
 import { browseService } from '@/services/browse';
 import Navbar from '@/components/global/Navbar';
 import SearchResult from '@/components/browse/SearchResult';
+import SearchBar from '@/components/browse/SearchBar';
+import Header from '@/components/global/Header';
 
 type SearchResultsScreenNavigationProp = StackNavigationProp<BrowseStackParamList, 'ResultadoBusqueda'>;
 type SearchResultsScreenRouteProp = RouteProp<BrowseStackParamList, 'ResultadoBusqueda'>;
@@ -29,13 +31,31 @@ interface Props {
 
 const SearchResultsScreen: React.FC<Props> = ({ navigation, route }) => {
   const { query } = route.params;
-  
+
   const [recetas, setRecetas] = useState<Receta[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchText, setSearchText] = useState<string>(query.texto || '');
+  const [searchQuery, setSearchQuery] = useState<RecetaSearchFilters>({});
   const [currentQuery, setCurrentQuery] = useState<RecetaSearchFilters>(query);
+
+  // Función para manejar la búsqueda - usar useCallback
+  const handleSearch = useCallback((searchText: string) => {
+    if (searchText.trim()) {
+      const query: RecetaSearchFilters = {
+        texto: searchText.trim(),
+        ...searchQuery // Mantener otros filtros si existen
+      };
+
+      performSearch(query);
+
+    }
+  }, [searchQuery]);
+
+  // Función para limpiar búsqueda - usar useCallback
+  const clearSearch = useCallback(() => {
+    setSearchQuery({});
+  }, []);
 
   // Función para realizar búsqueda
   const performSearch = async (searchQuery: RecetaSearchFilters, showLoader: boolean = true) => {
@@ -44,12 +64,10 @@ const SearchResultsScreen: React.FC<Props> = ({ navigation, route }) => {
         setIsLoading(true);
       }
       setError(null);
-      
+
       // Llamada al servicio de búsqueda
       const response = await browseService.buscar({ ...searchQuery, page: 1, limit: 10 });
 
-      console.log(response)
-      
       if (response.success && response.data) {
         if (Array.isArray(response.data)) {
           setRecetas(response.data);
@@ -63,15 +81,15 @@ const SearchResultsScreen: React.FC<Props> = ({ navigation, route }) => {
         setError(response.message || 'Error al buscar recetas');
         setRecetas([]);
       }
-      
+
     } catch (error: any) {
       console.error('❌ Error searching recetas:', error);
       setError('No se pudieron cargar los resultados. Verifica tu conexión.');
       setRecetas([]);
-      
+
       if (error.code === 'NETWORK_ERROR') {
         Alert.alert(
-          'Error de Conexión', 
+          'Error de Conexión',
           'No se pudo conectar al servidor. Verifica tu conexión a internet.',
           [{ text: 'OK', style: 'default' }]
         );
@@ -82,73 +100,16 @@ const SearchResultsScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
-  // Función para nueva búsqueda
-  const handleNewSearch = () => {
-    if (searchText.trim()) {
-      const newQuery: RecetaSearchFilters = {
-        texto: searchText.trim(),
-        ...currentQuery
-      };
-      setCurrentQuery(newQuery);
-      performSearch(newQuery, true);
-    }
-  };
-
   // Función para refrescar
   const onRefresh = async () => {
     setIsRefreshing(true);
     await performSearch(currentQuery, false);
   };
 
-  // Función para ir al detalle de receta
-  const goToRecipeDetail = (receta: Receta) => {
-    // navigation.navigate('RecipeDetail', { recipeId: receta.id });
-  };
-
   // Cargar resultados iniciales
   useEffect(() => {
     performSearch(query, true);
   }, []);
-
-  // Componente SearchBar para esta pantalla
-  const SearchBar = () => (
-    <View className="px-4 mb-4">
-      <View className="bg-white rounded-xl p-3 shadow-sm flex-row items-center">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
-          <Ionicons name="arrow-back" size={20} color="#B8A898" />
-        </TouchableOpacity>
-        
-        <Ionicons name="search-outline" size={20} color="#B8A898" />
-        <TextInput
-          value={searchText}
-          onChangeText={setSearchText}
-          placeholder="Buscar recetas, ingredientes..."
-          placeholderTextColor="#B8A898"
-          className="flex-1 ml-3 text-brown-500 text-base"
-          onSubmitEditing={handleNewSearch}
-          returnKeyType="search"
-        />
-        
-        {searchText.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchText('')} className="ml-2">
-            <Ionicons name="close-circle" size={20} color="#B8A898" />
-          </TouchableOpacity>
-        )}
-        
-        <TouchableOpacity 
-          onPress={handleNewSearch}
-          className="ml-2 bg-primary-400 p-2 rounded-lg"
-          disabled={!searchText.trim()}
-        >
-          <Ionicons 
-            name="arrow-forward" 
-            size={16} 
-            color={searchText.trim() ? "white" : "#B8A898"} 
-          />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   // Estado de carga
   const LoadingState = () => (
@@ -198,19 +159,21 @@ const SearchResultsScreen: React.FC<Props> = ({ navigation, route }) => {
 
   // Contenido principal con resultados
   const ResultsContent = () => (
-    <ScrollView 
+    <ScrollView
       className="flex-1"
       refreshControl={
         <RefreshControl
-          refreshing={isRefreshing} 
+          refreshing={isRefreshing}
           onRefresh={onRefresh}
           colors={['#FF6B35']}
           tintColor="#FF6B35"
         />
       }
     >
-      <SearchBar />
-      
+      <SearchBar initialText={""}
+        onSearch={handleSearch}
+        onClear={clearSearch} />
+
       <View className="px-4">
         {/* Header con resultados */}
         <View className="mb-4">
@@ -245,35 +208,42 @@ const SearchResultsScreen: React.FC<Props> = ({ navigation, route }) => {
     if (isLoading) {
       return (
         <View className="flex-1">
-          <SearchBar />
+          <SearchBar initialText={""}
+            onSearch={handleSearch}
+            onClear={clearSearch} />
           <LoadingState />
         </View>
       );
     }
-    
+
     if (error && recetas.length === 0) {
       return (
         <View className="flex-1">
-          <SearchBar />
+          <SearchBar initialText={""}
+            onSearch={handleSearch}
+            onClear={clearSearch} />
           <ErrorState />
         </View>
       );
     }
-    
+
     if (!isLoading && recetas.length === 0) {
       return (
         <View className="flex-1">
-          <SearchBar />
+          <SearchBar initialText={""}
+            onSearch={handleSearch}
+            onClear={clearSearch} />
           <EmptyState />
         </View>
       );
     }
-    
+
     return <ResultsContent />;
   };
 
   return (
     <SafeAreaView className="flex-1 bg-primary-50">
+      <Header/>
       {renderContent()}
       <Navbar />
     </SafeAreaView>

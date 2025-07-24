@@ -1,6 +1,6 @@
 // src/screens/auth/RecuperarClaveScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Image} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '@/types';
@@ -41,7 +41,7 @@ const RecuperarClaveScreen: React.FC<Props> = ({ navigation }) => {
           [
             {
               text: 'Ok',
-              onPress: () => navigation.navigate('VerificarCodigo', 
+              onPress: () => navigation.navigate('VerificarCodigo',
                 { email: email.trim() }
               ),
             }
@@ -72,10 +72,14 @@ const RecuperarClaveScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Título */}
         <View className="items-center mb-12">
+          <Image
+            source={require('../../media/RecoverPipon.png')}
+            resizeMode="cover"
+          />
           <Text className="text-3xl font-bold text-brown-500 mb-4">
             Recuperar Clave
           </Text>
-          <Text className="text-brown-300 text-center leading-6">
+          <Text className="text-brown-500 text-center leading-6">
             Ingresa tu email y te enviaremos un código de 4 dígitos para restablecer tu contraseña
           </Text>
         </View>
