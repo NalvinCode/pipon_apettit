@@ -49,6 +49,8 @@ export const crearReceta = async (req: AuthenticatedRequest, res: Response) => {
 
         const user = await User.findById(req.usuario?.id);
 
+        const categoriasIds = categorias.map((c: { id: any; }) => c?.id);
+
         // Crear nueva receta
         const nuevaReceta = new Receta({
             nombre,
@@ -56,7 +58,7 @@ export const crearReceta = async (req: AuthenticatedRequest, res: Response) => {
             descripcion,
             ingredientes,
             pasos,
-            categorias,
+            categoriasIds,
             media,
             usuario: user?.id, // Asignar el usuario autenticado
             fechaCreacion: new Date(),
