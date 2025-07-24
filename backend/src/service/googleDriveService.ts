@@ -28,7 +28,7 @@ class GoogleDriveService {
   constructor() {
     // Usar las mismas credenciales que ya tienes para Gmail
     this.auth = new google.auth.GoogleAuth({
-      keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE,
+      keyFile: "process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE",
       scopes: [
         'https://www.googleapis.com/auth/drive.file',
         'https://www.googleapis.com/auth/drive.readonly'
